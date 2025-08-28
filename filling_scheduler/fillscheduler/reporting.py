@@ -1,4 +1,3 @@
-# fillscheduler/reporting.py
 from __future__ import annotations
 from pathlib import Path
 import pandas as pd
@@ -32,13 +31,11 @@ def write_html_report(activities: list[Activity],
                       cfg: AppConfig) -> None:
     df_sched: pd.DataFrame = activities_to_dataframe(activities, cfg)
 
-    # KPI table
     kpi_df = pd.DataFrame(
         [{"Metric": k, "Value": v} for k, v in kpis.items()],
         columns=["Metric", "Value"]
     )
 
-    # Basic CSS
     css = """
     body { font-family: Arial, Helvetica, sans-serif; margin: 24px; }
     h1 { margin-bottom: 0; }
@@ -56,7 +53,6 @@ def write_html_report(activities: list[Activity],
     .warnings li { color: #e65100; }
     """
 
-    # Decorate Activity column with badges
     def badge(kind: str) -> str:
         if kind == "CLEAN":
             return '<span class="badge b-clean">CLEAN</span>'

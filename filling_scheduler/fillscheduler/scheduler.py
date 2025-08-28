@@ -1,4 +1,3 @@
-# fillscheduler/scheduler.py
 from __future__ import annotations
 from collections import deque
 from datetime import datetime, timedelta
@@ -25,7 +24,12 @@ def plan_schedule(
 
     def start_clean_block(current_time: datetime) -> tuple[datetime, Optional[str]]:
         clean_start = current_time
-        clean_end = clean_start + timedelta(hours=cfg.CLEAN_HOURS)
+        try:
+            clean_end = clean_start + timedelta(hours=cfg.CLEAN_HOURS)
+        except OverflowError as e:
+            raise ValueError(
+                f"Cannot start clean block at {clean_start}: adding {cfg.CLEAN_HOURS}h exceeds datetime range."
+            ) from e
         activities.append(Activity(clean_start, clean_end, "CLEAN", note="Block reset"))
         return clean_end, None
 
@@ -35,12 +39,11 @@ def plan_schedule(
     while remaining:
         pick_idx = pick_next_that_fits(remaining, prev_type, window_used, cfg)
         if pick_idx is None:
-            # Need a new block
             now, prev_type = start_clean_block(now)
             window_used = 0.0
             continue
 
-        # move chosen to front
+        # rotate to bring chosen to front
         for _ in range(pick_idx):
             remaining.append(remaining.popleft())
         lot = remaining.popleft()

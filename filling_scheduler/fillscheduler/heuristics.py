@@ -1,7 +1,6 @@
-# fillscheduler/heuristics.py
 from __future__ import annotations
-from collections import defaultdict, deque
-from typing import Deque, List, Optional
+from collections import defaultdict
+from typing import List, Optional, Deque
 from .models import Lot
 from .config import AppConfig
 
