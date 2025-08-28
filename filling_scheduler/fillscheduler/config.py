@@ -39,6 +39,11 @@ class AppConfig:
     CFS_CLUSTER_ORDER: str = "by_count"  # or "by_count"
     CFS_WITHIN: str = "LPT"                    # or "LPT"
 
+    # Hybrid tuning
+    HYBRID_SAME_TYPE_BONUS: float = 2.0     # extra push to keep type streaks
+    HYBRID_SPT_WEIGHT: float = 0.5          # SPT bias when staying on same type
+    HYBRID_SWITCH_PENALTY_MULT: float = 1.1 # >1 makes switches a bit costlier than smart-pack base
+
 
     # ==== Reporting ====
     HTML_REPORT: bool = True

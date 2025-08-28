@@ -31,6 +31,9 @@ def get_strategy(strategy_name: str) -> Strategy:
     if sn in ("cfs_pack", "cfspack", "cfs"):
         from .cfs_pack import CFSPack
         return CFSPack()
+    if sn in ("hybrid_pack", "hybrid"):
+        from .hybrid_pack import HybridPack
+        return HybridPack()
     # default
     from .smart_pack import SmartPack
     return SmartPack()
