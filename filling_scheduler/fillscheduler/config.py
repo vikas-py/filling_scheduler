@@ -44,6 +44,12 @@ class AppConfig:
     HYBRID_SPT_WEIGHT: float = 0.5          # SPT bias when staying on same type
     HYBRID_SWITCH_PENALTY_MULT: float = 1.1 # >1 makes switches a bit costlier than smart-pack base
 
+    # MILP tuning
+    MILP_MAX_LOTS: int = 30        # hard cap to keep model tractable
+    MILP_MAX_BLOCKS: int = 30      # defaults to n (each lot can be its own block)
+    MILP_TIME_LIMIT: int = 60      # seconds for solver
+
+
 
     # ==== Reporting ====
     HTML_REPORT: bool = True

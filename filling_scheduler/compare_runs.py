@@ -14,7 +14,7 @@ def parse_args():
     p.add_argument(
         "--strategies",
         nargs="+",
-        default=["smart-pack", "spt-pack"],
+        default=["smart-pack", "spt-pack", "lpt_pack", "cfs_pack","hybrid"],
         help="Strategies to compare (default: smart-pack spt-pack).",
     )
     return p.parse_args()

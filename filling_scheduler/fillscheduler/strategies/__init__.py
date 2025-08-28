@@ -34,6 +34,9 @@ def get_strategy(strategy_name: str) -> Strategy:
     if sn in ("hybrid_pack", "hybrid"):
         from .hybrid_pack import HybridPack
         return HybridPack()
+    if sn in ("milp_opt", "milpopt", "milp"):
+        from .milp_opt import MilpOpt
+        return MilpOpt()
     # default
     from .smart_pack import SmartPack
     return SmartPack()
