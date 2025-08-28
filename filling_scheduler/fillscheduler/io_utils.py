@@ -8,14 +8,22 @@ from .config import AppConfig
 
 def read_lots_with_pandas(path: Path, cfg: AppConfig) -> List[Lot]:
     df = pd.read_csv(path)
+
     required = {"Lot ID", "Type", "Vials"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns in CSV: {missing}")
 
-    df["Lot ID"] = df["Lot ID"].astype(str).str.strip()
-    df["Type"] = df["Type"].astype(str).str.strip()
+    # Strip whitespace, replace NaN with empty string for IDs and Types
+    df["Lot ID"] = df["Lot ID"].fillna("").astype(str).str.strip()
+    df["Type"]   = df["Type"].fillna("").astype(str).str.strip()
+
+    # Ensure vials numeric, NaN/invalid → error
+    if df["Vials"].isnull().any():
+        raise ValueError("One or more lots have missing Vials values.")
     df["Vials"] = pd.to_numeric(df["Vials"], errors="raise")
+
+    # Compute fill hours
     df["fill_hours"] = df["Vials"] / cfg.FILL_RATE_VPH
 
     lots: List[Lot] = [

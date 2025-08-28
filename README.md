@@ -1,35 +1,17 @@
 # Filling Scheduler
 
-A Python tool to generate a filling line schedule with **strict pharma constraints**:
+Generates a filling line schedule under strict constraints:
 - Clean before use (24h)
-- Clean window max 120h
-- Same-type changeover: 4h
-- Different-type changeover: 8h
-- Lots must run fully without split
+- Clean window ≤ 120h (fills + changeovers)
+- Changeover: 4h (same type), 8h (different type)
+- Fill rate: 332 vials/min (19,920 vials/h)
+- No lot splitting
+- Strict validation: impossible inputs fail early
 
-## Features
-- Reads lots from CSV (`Lot ID, Type, Vials`)
-- Computes fill times (332 vials/min)
-- Groups lots heuristically to reduce changeovers
-- Validates schedule (no window overrun, no split, no oversized lots)
-- Outputs:
-  - `schedule.csv` – actionable timeline
-  - `summary.txt` – KPIs + validation
-- Strict rules: impossible lots (>120h) trigger errors
-
-## Quick start
+## Run
 
 ```bash
-# clone the repo
-git clone https://github.com/<your-username>/filling_scheduler.git
-cd filling_scheduler
-
-# create virtual env
 python -m venv .venv
-source .venv/bin/activate   # on Windows: .venv\Scripts\activate
-
-# install dependencies
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# run
 python main.py

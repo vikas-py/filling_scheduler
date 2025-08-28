@@ -5,7 +5,7 @@ from .config import AppConfig
 
 
 class ValidationError(Exception):
-    """Raised when validation fails (used internally if you set raise_exceptions=True)."""
+    """Raised when validation fails (used internally if raise_exceptions=True)."""
     pass
 
 
@@ -17,12 +17,12 @@ def _maybe_fail_fast(
     raise_exceptions: bool,
 ) -> None:
     if warnings:
-        print("\n⚠️  WARNINGS during", title)
+        print("\nWARNINGS during", title)
         for w in warnings:
             print(f" - {w}")
 
     if errors:
-        print(f"\n❌ {title} FAILED:")
+        print(f"\nERROR {title} FAILED:")
         for e in errors:
             print(f" - {e}")
         print("\nFix the issues and run again. No schedule will be produced.")
