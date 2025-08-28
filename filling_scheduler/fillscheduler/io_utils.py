@@ -14,16 +14,16 @@ def read_lots_with_pandas(path: Path, cfg: AppConfig) -> List[Lot]:
     if missing:
         raise ValueError(f"Missing columns in CSV: {missing}")
 
-    # Strip whitespace, replace NaN with empty string for IDs and Types
+    # Normalize text fields; ensure blanks not NaN
     df["Lot ID"] = df["Lot ID"].fillna("").astype(str).str.strip()
     df["Type"]   = df["Type"].fillna("").astype(str).str.strip()
 
-    # Ensure vials numeric, NaN/invalid → error
+    # Vials: must be numeric and present
     if df["Vials"].isnull().any():
         raise ValueError("One or more lots have missing Vials values.")
     df["Vials"] = pd.to_numeric(df["Vials"], errors="raise")
 
-    # Compute fill hours
+    # Fill hours at configured rate
     df["fill_hours"] = df["Vials"] / cfg.FILL_RATE_VPH
 
     lots: List[Lot] = [

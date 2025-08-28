@@ -12,7 +12,6 @@ from fillscheduler.scheduler import plan_schedule
 from fillscheduler.validate import validate_input_lots, validate_schedule
 from fillscheduler.reporting import print_summary, write_html_report
 
-
 def main():
     cfg = AppConfig()
 
@@ -59,7 +58,6 @@ def main():
         print(f"Saved HTML report to: {html_path}")
 
     print_summary(kpis, [], [], schedule_csv, summary_txt)
-
 
 if __name__ == "__main__":
     main()
