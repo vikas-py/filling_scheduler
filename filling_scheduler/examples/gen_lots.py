@@ -4,7 +4,7 @@ from pathlib import Path
 
 def generate_dataset(
     out_path: Path,
-    n_lots: int = 100,
+    n_lots: int = 500,
     vial_types: list[str] = None,
     min_vials: int = 20_000,
     max_vials: int = 2_300_000,
@@ -35,4 +35,4 @@ def generate_dataset(
 
 if __name__ == "__main__":
     out_path = Path(__file__).parent / "lots_large.csv"
-    generate_dataset(out_path, n_lots=200)  # change size here
+    generate_dataset(out_path, n_lots=500)  # change size here

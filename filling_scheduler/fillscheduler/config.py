@@ -35,6 +35,11 @@ class AppConfig:
     DYNAMIC_SWITCH_MULT_MIN: float = 1.0   # multiplier at 0% window used
     DYNAMIC_SWITCH_MULT_MAX: float = 1.5   # multiplier at 100% window used
 
+    # CFS tuning
+    CFS_CLUSTER_ORDER: str = "by_count"  # or "by_count"
+    CFS_WITHIN: str = "LPT"                    # or "LPT"
+
+
     # ==== Reporting ====
     HTML_REPORT: bool = True
     HTML_FILENAME: str = "report.html"

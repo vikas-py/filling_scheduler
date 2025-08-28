@@ -1,0 +1,1 @@
+python compare_runs.py --data examples/lots_large.csv --strategies smart-pack spt-pack lpt-pack
