@@ -22,13 +22,18 @@ class AppConfig:
     CHG_DIFF_HOURS: float = 8.0
 
     # ==== Heuristic tuning (smart-pack) ====
-    # Tiny slack to avoid floating point window overruns
-    UTIL_PAD_HOURS: float = 0.0
-    # Beam search width for short look-ahead (>=1)
-    BEAM_WIDTH: int = 3
-    # Penalty weights for changeover in scoring (diff > same)
-    SCORE_ALPHA: float = 8.0   # diff-type penalty
-    SCORE_BETA: float = 4.0    # same-type penalty
+    UTIL_PAD_HOURS: float = 0.0        # tiny slack to avoid float rounding
+    BEAM_WIDTH: int = 3                # small look-ahead
+    # Base penalties (hours). Think of these as "cost in hours" we want to avoid.
+    SCORE_ALPHA: float = 8.0           # diff-type changeover penalty (baseline)
+    SCORE_BETA: float = 4.0            # same-type changeover penalty (baseline)
+
+    # NEW: balance knobs
+    SLACK_WASTE_WEIGHT: float = 3.0    # penalty per hour of unusable slack left in window
+    STREAK_BONUS: float = 1.0          # bonus (hours) for staying on same type
+    # Optional: increase diff-type penalty when the window is still relatively empty
+    DYNAMIC_SWITCH_MULT_MIN: float = 1.0   # multiplier at 0% window used
+    DYNAMIC_SWITCH_MULT_MAX: float = 1.5   # multiplier at 100% window used
 
     # ==== Reporting ====
     HTML_REPORT: bool = True

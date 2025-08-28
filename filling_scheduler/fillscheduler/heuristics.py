@@ -55,87 +55,125 @@ def _fits(window_used: float, add_hours: float, cfg: AppConfig) -> bool:
     pad = getattr(cfg, "UTIL_PAD_HOURS", 0.0) or 0.0
     return window_used + add_hours <= (cfg.WINDOW_HOURS - pad) + 1e-9
 
-def _candidate_score(prev_type: Optional[str], lot: Lot, window_used: float, cfg: AppConfig) -> Tuple[float, float, float]:
+def _dynamic_switch_multiplier(window_used: float, cfg: AppConfig) -> float:
+    """Scale switch penalties mildly as we near the window end."""
+    u = max(0.0, min(1.0, window_used / max(cfg.WINDOW_HOURS, 1e-9)))
+    lo = getattr(cfg, "DYNAMIC_SWITCH_MULT_MIN", 1.0)
+    hi = getattr(cfg, "DYNAMIC_SWITCH_MULT_MAX", 1.5)
+    return lo + (hi - lo) * u
+
+def _min_need_after(prev_type: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    """Compute the minimum (chg + fill) needed by any remaining lot if we start from prev_type."""
+    best = float("inf")
+    for cand in remaining:
+        chg = changeover_hours(prev_type, cand.lot_type, cfg)
+        need = chg + cand.fill_hours
+        if need < best:
+            best = need
+    return best if best != float("inf") else 0.0
+
+def _unusable_slack(window_used_after: float, new_prev: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    """If the remaining capacity cannot fit even the smallest next job, we count all of it as 'wasted' slack."""
+    remaining_cap = max(0.0, cfg.WINDOW_HOURS - window_used_after)
+    if remaining_cap <= 1e-9:
+        return 0.0
+    min_need = _min_need_after(new_prev, remaining, cfg)
+    return remaining_cap if min_need > remaining_cap + 1e-9 else 0.0
+
+def _candidate_score2(
+    prev_type: Optional[str],
+    lot: Lot,
+    window_used: float,
+    remaining: Deque[Lot],
+    cfg: AppConfig,
+) -> float:
     """
-    Higher is better. Sort key:
-      1) utilization gain in current window (higher better),
-      2) changeover penalty (less negative better),
-      3) tie-breaker: shorter fill first (pack more).
+    Score in hour-equivalents (higher is better):
+      + utilization added (chg + fill)
+      - dynamic changeover penalty
+      - slack waste penalty
+      + streak bonus for keeping same type
+      - tiny tie-breaker for very long fills (we prefer squeezing more)
     """
     chg = changeover_hours(prev_type, lot.lot_type, cfg)
     need = chg + lot.fill_hours
-    remaining = max(0.0, cfg.WINDOW_HOURS - window_used)
-    util_gain = min(need, remaining) / max(remaining, 1e-9)  # [0..1]
+    if not _fits(window_used, need, cfg):
+        return -1e9  # invalid
 
+    # dynamic switch penalty (prefer same type, penalize diff more; scale with window utilization)
+    mult = _dynamic_switch_multiplier(window_used, cfg)
     if prev_type is None:
-        penalty = 0.0
+        switch_penalty = 0.0
     else:
-        penalty = -(cfg.SCORE_ALPHA if prev_type != lot.lot_type else cfg.SCORE_BETA)
+        base_pen = cfg.SCORE_BETA if prev_type == lot.lot_type else cfg.SCORE_ALPHA
+        switch_penalty = base_pen * mult
 
-    return (util_gain, penalty, -lot.fill_hours)
+    # projected unusable slack after picking this lot
+    window_used_after = window_used + need
+    slack_waste = _unusable_slack(window_used_after, lot.lot_type, remaining, cfg)
 
-def pick_next_scored(remaining: Deque[Lot],
-                     prev_type: Optional[str],
-                     window_used: float,
-                     cfg: AppConfig) -> Optional[int]:
-    candidates: List[Tuple[Tuple[float, float, float], int]] = []
-    for i, cand in enumerate(remaining):
-        chg = changeover_hours(prev_type, cand.lot_type, cfg)
-        need = chg + cand.fill_hours
-        if _fits(window_used, need, cfg):
-            candidates.append((_candidate_score(prev_type, cand, window_used, cfg), i))
-    if not candidates:
-        return None
-    candidates.sort(reverse=True, key=lambda x: x[0])
-    return candidates[0][1]
+    # streak bonus
+    streak_bonus = getattr(cfg, "STREAK_BONUS", 0.0) if prev_type == lot.lot_type else 0.0
 
-def pick_next_scored_beam1(remaining: Deque[Lot],
-                           prev_type: Optional[str],
-                           window_used: float,
-                           cfg: AppConfig) -> Optional[int]:
-    """Beam width K: try top-K base candidates; project one extra step and choose best combined."""
+    # combine (hours-equivalent)
+    score = need                 \
+            - switch_penalty     \
+            - getattr(cfg, "SLACK_WASTE_WEIGHT", 0.0) * slack_waste \
+            + streak_bonus       \
+            - 0.01 * lot.fill_hours   # gentle preference to shorter fills for packability
+
+    return score
+
+def pick_next_scored_beam1(
+    remaining: Deque[Lot],
+    prev_type: Optional[str],
+    window_used: float,
+    cfg: AppConfig,
+) -> Optional[int]:
+    """
+    Beam width K: pick top-K by base score, then one-step look-ahead:
+    choose the candidate whose (base + best-next) combined score is highest.
+    """
     K = max(1, getattr(cfg, "BEAM_WIDTH", 3))
-    base: List[Tuple[Tuple[float, float, float], int]] = []
+
+    # base scores
+    base: List[Tuple[float, int]] = []
     for i, cand in enumerate(remaining):
-        chg = changeover_hours(prev_type, cand.lot_type, cfg)
-        need = chg + cand.fill_hours
-        if _fits(window_used, need, cfg):
-            base.append((_candidate_score(prev_type, cand, window_used, cfg), i))
+        s = _candidate_score2(prev_type, cand, window_used, remaining, cfg)
+        if s > -1e9:
+            base.append((s, i))
     if not base:
         return None
+
     base.sort(reverse=True, key=lambda x: x[0])
     top = base[:K]
 
-    def project(idx: int) -> Tuple[float, float]:
+    # project a single next step greedily
+    best_idx = None
+    best_combo = None
+
+    for base_score, idx in top:
         cand = remaining[idx]
         chg = changeover_hours(prev_type, cand.lot_type, cfg)
         need = chg + cand.fill_hours
         if not _fits(window_used, need, cfg):
-            return (-1.0, -1e9)
+            continue
+
         new_used = window_used + need
         new_prev = cand.lot_type
 
-        best_util2 = 0.0
-        best_pen2 = -1e9
+        # best follow-up choice
+        follow_best = 0.0
         for j, nxt in enumerate(remaining):
             if j == idx:
                 continue
-            chg2 = changeover_hours(new_prev, nxt.lot_type, cfg)
-            need2 = chg2 + nxt.fill_hours
-            if _fits(new_used, need2, cfg):
-                rem = max(0.0, cfg.WINDOW_HOURS - new_used)
-                util2 = min(need2, rem) / max(rem, 1e-9)
-                pen2 = 0.0 if new_prev is None else (-(cfg.SCORE_ALPHA if new_prev != nxt.lot_type else cfg.SCORE_BETA))
-                if util2 > best_util2 or (abs(util2 - best_util2) < 1e-9 and pen2 > best_pen2):
-                    best_util2, best_pen2 = util2, pen2
-        return (best_util2, best_pen2)
+            s2 = _candidate_score2(new_prev, nxt, new_used, remaining, cfg)
+            if s2 > follow_best:
+                follow_best = s2
 
-    best_idx = None
-    best_key: Optional[Tuple[float, float]] = None
-    for score, idx in top:
-        util2, pen2 = project(idx)
-        key = (score[0] + util2, score[1] + pen2)
-        if best_key is None or key > best_key:
-            best_key = key
+        combo = base_score + 0.25 * follow_best   # modest look-ahead weight
+        if best_combo is None or combo > best_combo:
+            best_combo = combo
             best_idx = idx
-    return best_idx
+
+    return best_idx if best_idx is not None else top[0][1]

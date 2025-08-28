@@ -1,32 +1,44 @@
+# replace filling_scheduler/compare_runs.py with this
+
 from __future__ import annotations
 from pathlib import Path
 import argparse
 
 from fillscheduler.config import AppConfig
-from fillscheduler.compare import compare_input_order_vs_optimized
+from fillscheduler.compare import compare_multi_strategies
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Compare input order vs optimized schedule.")
+    p = argparse.ArgumentParser(description="Build a single consolidated comparison report for given order and multiple strategies.")
     p.add_argument("--data", default=None, help="Path to lots CSV (default from config).")
     p.add_argument("--out", default=None, help="Output folder (default from config).")
+    p.add_argument(
+        "--strategies",
+        nargs="+",
+        default=["smart-pack", "spt-pack"],
+        help="Strategies to compare (default: smart-pack spt-pack).",
+    )
     return p.parse_args()
 
 def main():
     args = parse_args()
     cfg = AppConfig()
+
     data_path = Path(args.data) if args.data else cfg.DATA_PATH
     outdir = Path(args.out) if args.out else cfg.OUTPUT_DIR
 
-    given_csv, opt_csv, cmp_csv, cmp_html = compare_input_order_vs_optimized(
+    print(f"Input CSV : {data_path}")
+    print(f"Output dir: {outdir}")
+    print(f"Strategies: {', '.join(args.strategies)}")
+
+    kpis_csv, multi_html = compare_multi_strategies(
         data_path=data_path,
         outdir=outdir,
         cfg=cfg,
+        strategies=args.strategies,
     )
-    print("Saved:")
-    print(f" - Given-order schedule: {given_csv}")
-    print(f" - Optimized schedule  : {opt_csv}")
-    print(f" - KPI comparison      : {cmp_csv}")
-    print(f" - HTML comparison     : {cmp_html}")
+    print("\nSaved consolidated outputs:")
+    print(f" - KPIs CSV : {kpis_csv}")
+    print(f" - HTML     : {multi_html}")
 
 if __name__ == "__main__":
     main()
