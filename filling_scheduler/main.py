@@ -11,12 +11,11 @@ from fillscheduler.io_utils import (
 )
 from fillscheduler.scheduler import plan_schedule
 from fillscheduler.validate import validate_schedule
-from fillscheduler.reporting import print_summary
+from fillscheduler.reporting import print_summary, write_html_report
 
 def main():
     cfg = AppConfig()
 
-    # Optionally ask for paths if INTERACTIVE is True
     data_path = cfg.DATA_PATH
     if cfg.INTERACTIVE:
         val = input(f"Path to Lots CSV [{data_path}]: ").strip()
@@ -34,25 +33,22 @@ def main():
     except ValueError:
         raise SystemExit("Invalid START_TIME_STR in config. Use 'YYYY-MM-DD HH:MM'.")
 
-    # 1) Load lots
     lots = read_lots_with_pandas(data_path, cfg)
 
-    # 2) Plan schedule
     activities, makespan_hours, kpis = plan_schedule(
         lots=lots, start_time=start_dt, cfg=cfg, strategy=cfg.STRATEGY
     )
-
-    # 3) Validate
     errors, warnings = validate_schedule(activities, cfg)
-
-    # 4) Write outputs
     schedule_csv = outdir / "schedule.csv"
-    write_schedule_with_pandas(activities, schedule_csv)
-
+    write_schedule_with_pandas(activities, schedule_csv, cfg)
     summary_txt = outdir / "summary.txt"
     write_summary_txt(kpis, errors, warnings, summary_txt)
 
-    # 5) Console recap
+    if cfg.HTML_REPORT:
+        html_path = outdir / cfg.HTML_FILENAME
+        write_html_report(activities, kpis, errors, warnings, html_path, cfg)
+        print(f"Saved HTML report to: {html_path}")
+
     print_summary(kpis, errors, warnings, schedule_csv, summary_txt)
 
 if __name__ == "__main__":

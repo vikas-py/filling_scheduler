@@ -15,6 +15,3 @@ venv/
 # IDEs
 .vscode/
 .idea/
-
-# Outputs
-output/

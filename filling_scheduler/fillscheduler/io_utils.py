@@ -9,18 +9,14 @@ from .config import AppConfig
 
 def read_lots_with_pandas(path: Path, cfg: AppConfig) -> List[Lot]:
     df = pd.read_csv(path)
-    # Expected columns: Lot ID, Type, Vials
     required = {"Lot ID", "Type", "Vials"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns in CSV: {missing}")
 
-    # Basic cleaning
     df["Lot ID"] = df["Lot ID"].astype(str).str.strip()
     df["Type"] = df["Type"].astype(str).str.strip()
     df["Vials"] = pd.to_numeric(df["Vials"], errors="raise")
-
-    # Compute fill hours
     df["fill_hours"] = df["Vials"] / cfg.FILL_RATE_VPH
 
     lots: List[Lot] = [
@@ -31,20 +27,24 @@ def read_lots_with_pandas(path: Path, cfg: AppConfig) -> List[Lot]:
         raise ValueError("No lots found after reading CSV.")
     return lots
 
-def write_schedule_with_pandas(activities: List[Activity], path: Path) -> None:
+def activities_to_dataframe(activities: List[Activity], cfg: AppConfig) -> pd.DataFrame:
     rows = []
     for a in activities:
         hrs = (a.end - a.start).total_seconds() / 3600.0
         rows.append({
-            "Start": a.start.strftime("%Y-%m-%d %H:%M"),
-            "End": a.end.strftime("%Y-%m-%d %H:%M"),
+            "Start": a.start.strftime(cfg.DATETIME_FMT),
+            "End": a.end.strftime(cfg.DATETIME_FMT),
             "Hours": round(hrs, 2),
             "Activity": a.kind,
             "Lot ID": a.lot_id or "",
             "Type": a.lot_type or "",
             "Note": a.note or "",
         })
-    df = pd.DataFrame(rows, columns=["Start", "End", "Hours", "Activity", "Lot ID", "Type", "Note"])
+    return pd.DataFrame(rows, columns=["Start", "End", "Hours", "Activity", "Lot ID", "Type", "Note"])
+
+def write_schedule_with_pandas(activities: List[Activity], path: Path, cfg: AppConfig | None = None) -> None:
+    cfg = cfg or AppConfig()
+    df = activities_to_dataframe(activities, cfg)
     df.to_csv(path, index=False)
 
 def write_summary_txt(kpis: dict, errors: list[str], warnings: list[str], path: Path) -> None:
