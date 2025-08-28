@@ -1,0 +1,7 @@
+=== Schedule Summary ===
+Makespan (h): 497.16
+Total Clean (h): 96.00
+Total Changeover (h): 48.00
+Total Fill (h): 353.16
+Lots Scheduled: 15
+Clean Blocks: 4
