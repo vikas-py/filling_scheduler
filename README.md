@@ -1,7 +1,7 @@
 # Filling Scheduler
 
-[![Tests](https://img.shields.io/badge/tests-37%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
-[![Coverage](https://img.shields.io/badge/coverage-55.3%25-yellow)](htmlcov/index.html)
+[![Tests](https://img.shields.io/badge/tests-99%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
+[![Coverage](https://img.shields.io/badge/coverage-74.2%25-brightgreen)](htmlcov/index.html)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -158,16 +158,28 @@ pytest --cov=fillscheduler --cov-report=html  # With coverage
 
 | Module | Coverage | Status |
 |:-------|:---------|:-------|
+| **Core Modules** | | |
 | config.py | 100% | ✅ Excellent |
 | models.py | 100% | ✅ Excellent |
 | rules.py | 100% | ✅ Excellent |
+| io_utils.py | 100% | ✅ Excellent |
+| reporting.py | 100% | ✅ Excellent |
+| compare.py | 100% | ✅ Excellent |
+| seq_utils.py | 100% | ✅ Excellent |
 | validate.py | 93.4% | ✅ Excellent |
-| strategies/smart_pack.py | 90.8% | ✅ Excellent |
-| strategies/hybrid_pack.py | 90.8% | ✅ Excellent |
-| scheduler.py | 62.0% | ⚠️ Good |
-| io_utils.py | 42.9% | ⚠️ Needs work |
-| reporting.py | 0% | ❌ Not tested |
-| compare.py | 0% | ❌ Not tested |
+| scheduler.py | 83.2% | ✅ Excellent |
+| **Strategies** | | |
+| spt_pack.py | 98.0% | ✅ Excellent |
+| lpt_pack.py | 97.1% | ✅ Excellent |
+| hybrid_pack.py | 90.8% | ✅ Excellent |
+| smart_pack.py | 90.8% | ✅ Excellent |
+| cfs_pack.py | 81.5% | ✅ Good |
+| strategies/__init__.py | 80.0% | ✅ Good |
+| **CLI Modules** | | |
+| cli/schedule.py | 0% | ⚠️ Not tested |
+| cli/compare.py | 0% | ⚠️ Not tested |
+| compare_sequences.py | 0% | ⚠️ Not tested |
+| milp_opt.py | 0% | ⚠️ Not tested |
 
 ---
 
