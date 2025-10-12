@@ -7,6 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/vikas-py/filling_scheduler)
+<<<<<<< HEAD
 
 
 
@@ -15,6 +16,16 @@ A production-grade pharmaceutical filling line scheduler that optimizes lot sequ
 
 
 ---[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/vikas-py/filling_scheduler)Generates a filling line schedule under strict constraints:
+=======
+
+Generates a filling line schedule under strict constraints:
+
+A production-grade pharmaceutical filling line scheduler that optimizes lot sequencing under strict operational constraints. The system implements multiple scheduling strategies ranging from fast heuristics to exact optimization. Clean before use (24h)
+
+
+
+## ✨ Features:
+>>>>>>> 94c06f5a1fe1f2fa79f46ef0693a2bd1822f9987
 
 
 
