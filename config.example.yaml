@@ -1,0 +1,55 @@
+# Filling Scheduler Configuration
+#
+# This is an example configuration file for the filling scheduler.
+# Save this as .fillscheduler.yaml in your project directory or
+# ~/.config/fillscheduler/config.yaml for user-wide settings.
+
+# ==== File & Run Options ====
+data_path: "examples/lots.csv"  # Path to input CSV file
+output_dir: "output"             # Output directory for results
+start_time_str: "2025-01-01 08:00"  # Start time (YYYY-MM-DD HH:MM)
+strategy: "smart-pack"           # Scheduling strategy (smart-pack, spt-pack, lpt-pack, cfs-pack, hybrid-pack, milp)
+interactive: false               # Enable interactive mode
+
+# ==== Process Constants ====
+fill_rate_vph: 19920.0          # Fill rate in vials per hour (332 vials/min * 60)
+clean_hours: 24.0               # Cleaning duration in hours
+window_hours: 120.0             # Time window in hours (5 days)
+chg_same_hours: 4.0             # Changeover time for same lot type (hours)
+chg_diff_hours: 8.0             # Changeover time for different lot types (hours)
+
+# ==== Strategy-Specific Configurations ====
+strategies:
+
+  # Smart-Pack Strategy (Recommended)
+  smart_pack:
+    util_pad_hours: 0.0         # Tiny slack to avoid float rounding
+    beam_width: 3               # Look-ahead width (1-10, higher = slower but better)
+    score_alpha: 8.0            # Different-type changeover penalty (hours)
+    score_beta: 4.0             # Same-type changeover penalty (hours)
+    slack_waste_weight: 3.0     # Penalty per hour of unusable slack in window
+    streak_bonus: 1.0           # Bonus (hours) for staying on same type
+    dynamic_switch_mult_min: 1.0  # Switch multiplier at 0% window used
+    dynamic_switch_mult_max: 1.5  # Switch multiplier at 100% window used
+
+  # CFS (Cluster First Schedule) Strategy
+  cfs:
+    cluster_order: "by_count"   # Clustering order: "by_count" or "by_total_hours"
+    within: "LPT"               # Within-cluster sorting: "LPT" or "SPT"
+
+  # Hybrid Strategy
+  hybrid:
+    same_type_bonus: 2.0        # Extra push to keep type streaks
+    spt_weight: 0.5             # SPT bias when staying on same type
+    switch_penalty_mult: 1.1    # Switch penalty multiplier (>1 = costlier switches)
+
+  # MILP (Mixed Integer Linear Programming) Strategy
+  milp:
+    max_lots: 30                # Hard cap to keep model tractable
+    max_blocks: 30              # Maximum cleaning blocks
+    time_limit: 60              # Solver time limit in seconds
+
+# ==== Reporting Options ====
+html_report: true               # Generate HTML report
+html_filename: "report.html"    # HTML report filename
+datetime_fmt: "%Y-%m-%d %H:%M"  # Datetime format string

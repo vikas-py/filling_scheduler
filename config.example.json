@@ -1,0 +1,41 @@
+{
+  "data_path": "examples/lots.csv",
+  "output_dir": "output",
+  "start_time_str": "2025-01-01 08:00",
+  "strategy": "smart-pack",
+  "interactive": false,
+  "fill_rate_vph": 19920.0,
+  "clean_hours": 24.0,
+  "window_hours": 120.0,
+  "chg_same_hours": 4.0,
+  "chg_diff_hours": 8.0,
+  "strategies": {
+    "smart_pack": {
+      "util_pad_hours": 0.0,
+      "beam_width": 3,
+      "score_alpha": 8.0,
+      "score_beta": 4.0,
+      "slack_waste_weight": 3.0,
+      "streak_bonus": 1.0,
+      "dynamic_switch_mult_min": 1.0,
+      "dynamic_switch_mult_max": 1.5
+    },
+    "cfs": {
+      "cluster_order": "by_count",
+      "within": "LPT"
+    },
+    "hybrid": {
+      "same_type_bonus": 2.0,
+      "spt_weight": 0.5,
+      "switch_penalty_mult": 1.1
+    },
+    "milp": {
+      "max_lots": 30,
+      "max_blocks": 30,
+      "time_limit": 60
+    }
+  },
+  "html_report": true,
+  "html_filename": "report.html",
+  "datetime_fmt": "%Y-%m-%d %H:%M"
+}
