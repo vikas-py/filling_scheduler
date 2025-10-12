@@ -10,11 +10,11 @@
 
 Generates a filling line schedule under strict constraints:
 
-A production-grade pharmaceutical filling line scheduler that optimizes lot sequencing under strict operational constraints. The system implements multiple scheduling strategies ranging from fast heuristics to exact optimization.[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)- Clean before use (24h)
+A production-grade pharmaceutical filling line scheduler that optimizes lot sequencing under strict operational constraints. The system implements multiple scheduling strategies ranging from fast heuristics to exact optimization. Clean before use (24h)
 
 
 
-## ✨ Features[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)- Clean window <= 120h (fills + changeovers)
+## ✨ Features:
 
 
 
