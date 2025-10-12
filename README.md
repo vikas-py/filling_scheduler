@@ -1,7 +1,7 @@
 # Filling Scheduler
 
-[![Tests](https://img.shields.io/badge/tests-99%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
-[![Coverage](https://img.shields.io/badge/coverage-74.2%25-brightgreen)](htmlcov/index.html)
+[![Tests](https://img.shields.io/badge/tests-126%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
+[![Coverage](https://img.shields.io/badge/coverage-74.6%25-brightgreen)](htmlcov/index.html)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
