@@ -1,29 +1,20 @@
-# pytest.ini
-[pytest]
-testpaths = tests
-pythonpath = src
+# .coveragerc - Coverage.py configuration file
 
-# Coverage settings
-addopts = 
-    --cov=fillscheduler
-    --cov-report=html
-    --cov-report=term-missing
-    --cov-report=xml
-    --cov-fail-under=55
-    -v
-
-# Coverage configuration
-[coverage:run]
-source = src
-omit = 
+[run]
+source = src/fillscheduler
+omit =
     */tests/*
     */test_*.py
     */__pycache__/*
     */site-packages/*
     */venv/*
     */.venv/*
+    */conftest.py
 
-[coverage:report]
+branch = True
+parallel = True
+
+[report]
 # Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -31,6 +22,7 @@ exclude_lines =
     
     # Don't complain about missing debug-only code:
     def __repr__
+    if self\.debug
     
     # Don't complain if tests don't hit defensive assertion code:
     raise AssertionError
@@ -39,15 +31,32 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if __name__ == .__main__.:
     if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
     @abstractmethod
     @abc.abstractmethod
     
     # Don't complain about ellipsis in protocols/stubs
     \.\.\.
+    pass
 
-# Ignore too old version warnings
-ignore_errors = True
-
-precision = 2
+# Show line numbers of statements that weren't executed
 show_missing = True
+
+# Target coverage percentage
+fail_under = 70
+
+# Precision for coverage percentage
+precision = 2
+
+# Skip files with 100% coverage
 skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+[html]
+directory = htmlcov
+title = Filling Scheduler Coverage Report
+
+[xml]
+output = coverage.xml
