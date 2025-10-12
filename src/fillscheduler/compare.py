@@ -1,15 +1,16 @@
 # append to filling_scheduler/fillscheduler/compare.py
 
 from __future__ import annotations
-from pathlib import Path
-from typing import List, Tuple, Dict
+
 from datetime import datetime
+from pathlib import Path
+
 import pandas as pd
 
 from .config import AppConfig
-from .io_utils import read_lots_with_pandas, write_schedule_with_pandas, activities_to_dataframe
-from .validate import validate_input_lots, validate_schedule
+from .io_utils import activities_to_dataframe, read_lots_with_pandas, write_schedule_with_pandas
 from .scheduler import plan_schedule, plan_schedule_in_order
+from .validate import validate_input_lots, validate_schedule
 
 _ALL_KPI_KEYS = [
     "Makespan (h)",
@@ -20,19 +21,22 @@ _ALL_KPI_KEYS = [
     "Clean Blocks",
 ]
 
+
 def _kpi_float(s: str) -> float:
     try:
         return float(s)
     except Exception:
         return float("nan")
 
-def _kpis_to_row(name: str, kpis: Dict[str, str]) -> Dict[str, str]:
+
+def _kpis_to_row(name: str, kpis: dict[str, str]) -> dict[str, str]:
     row = {"Run": name}
     for k in _ALL_KPI_KEYS:
         row[k] = kpis.get(k, "")
     return row
 
-def _delta_to_given_df(given: Dict[str, str], other: Dict[str, str], label: str) -> pd.DataFrame:
+
+def _delta_to_given_df(given: dict[str, str], other: dict[str, str], label: str) -> pd.DataFrame:
     rows = []
     for k in _ALL_KPI_KEYS:
         g = given.get(k, "")
@@ -44,12 +48,13 @@ def _delta_to_given_df(given: Dict[str, str], other: Dict[str, str], label: str)
             rows.append({"Metric": k, "Given": g, label: o, f"Delta ({label} - Given)": ""})
     return pd.DataFrame(rows, columns=["Metric", "Given", label, f"Delta ({label} - Given)"])
 
+
 def compare_multi_strategies(
     data_path: Path,
     outdir: Path,
     cfg: AppConfig,
-    strategies: List[str],
-) -> Tuple[Path, Path]:
+    strategies: list[str],
+) -> tuple[Path, Path]:
     """
     Build a single consolidated report (HTML + CSV) for:
       - Given (CSV order) schedule
@@ -105,7 +110,9 @@ def compare_multi_strategies(
         df = activities_to_dataframe(acts, cfg)
 
         # Save schedules (optional single-file request doesn't forbid extra CSVs, but we keep everything in HTML)
-        write_schedule_with_pandas(acts, outdir / f"optimized_schedule_{strat.replace('-','_')}.csv", cfg)
+        write_schedule_with_pandas(
+            acts, outdir / f"optimized_schedule_{strat.replace('-','_')}.csv", cfg
+        )
 
         # KPI row
         kpi_rows.append(_kpis_to_row(f"Optimized ({strat})", kpis))
@@ -115,12 +122,14 @@ def compare_multi_strategies(
         per_strategy_deltas.append((strat, delta_df))
 
         # Add a collapsible schedule section
-        schedules_html_sections.append(f"""
+        schedules_html_sections.append(
+            f"""
         <details>
           <summary>Optimized Schedule — {strat}</summary>
           {df.to_html(index=False, escape=False)}
         </details>
-        """)
+        """
+        )
 
     # KPIs CSV for all runs
     kpis_df = pd.DataFrame(kpi_rows, columns=["Run"] + _ALL_KPI_KEYS)

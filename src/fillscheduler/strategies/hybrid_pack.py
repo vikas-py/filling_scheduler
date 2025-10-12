@@ -1,11 +1,12 @@
 # filling_scheduler/fillscheduler/strategies/hybrid_pack.py
 from __future__ import annotations
-from typing import Deque, List, Optional, Tuple
-from collections import deque, defaultdict
 
-from ..models import Lot
+from collections import deque
+
 from ..config import AppConfig
+from ..models import Lot
 from ..rules import changeover_hours
+
 
 class HybridPack:
     """
@@ -32,7 +33,9 @@ class HybridPack:
         hi = getattr(cfg, "DYNAMIC_SWITCH_MULT_MAX", 1.5)
         return lo + (hi - lo) * u
 
-    def _min_need_after(self, prev_type: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _min_need_after(
+        self, prev_type: str | None, remaining: deque[Lot], cfg: AppConfig
+    ) -> float:
         best = float("inf")
         for c in remaining:
             chg = changeover_hours(prev_type, c.lot_type, cfg)
@@ -41,14 +44,20 @@ class HybridPack:
                 best = need
         return best if best != float("inf") else 0.0
 
-    def _unusable_slack(self, window_used_after: float, new_prev: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _unusable_slack(
+        self,
+        window_used_after: float,
+        new_prev: str | None,
+        remaining: deque[Lot],
+        cfg: AppConfig,
+    ) -> float:
         cap = max(0.0, cfg.WINDOW_HOURS - window_used_after)
         if cap <= 1e-9:
             return 0.0
         min_need = self._min_need_after(new_prev, remaining, cfg)
         return cap if min_need > cap + 1e-9 else 0.0
 
-    def _type_spt_hint(self, target_type: str, remaining: Deque[Lot]) -> float:
+    def _type_spt_hint(self, target_type: str, remaining: deque[Lot]) -> float:
         """
         Return a small bonus if the target_type has short jobs available (SPT flavor).
         Smaller shortest fill -> larger bonus (we invert).
@@ -62,7 +71,14 @@ class HybridPack:
         # Map shortest fill to a modest positive bonus; tuned small to avoid dominating
         return max(0.0, 2.0 - 0.02 * shortest)  # ~2.0 bonus dwindles as shortest grows
 
-    def _score(self, prev_type: Optional[str], lot: Lot, window_used: float, remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _score(
+        self,
+        prev_type: str | None,
+        lot: Lot,
+        window_used: float,
+        remaining: deque[Lot],
+        cfg: AppConfig,
+    ) -> float:
         # Base feasibility & amounts
         chg = changeover_hours(prev_type, lot.lot_type, cfg)
         need = chg + lot.fill_hours
@@ -110,15 +126,17 @@ class HybridPack:
         return score
 
     # ---------- Strategy API ----------
-    def preorder(self, lots: List[Lot], cfg: AppConfig) -> Deque[Lot]:
+    def preorder(self, lots: list[Lot], cfg: AppConfig) -> deque[Lot]:
         # No heavy global reorder; we rely on scored picking
         return deque(lots)
 
-    def pick_next(self, remaining: Deque[Lot], prev_type: Optional[str], window_used: float, cfg: AppConfig) -> Optional[int]:
+    def pick_next(
+        self, remaining: deque[Lot], prev_type: str | None, window_used: float, cfg: AppConfig
+    ) -> int | None:
         # Beam search over top-K base scores + one-step look-ahead (lightweight)
         K = max(1, getattr(cfg, "BEAM_WIDTH", 3))
 
-        base: List[Tuple[float, int]] = []
+        base: list[tuple[float, int]] = []
         for i, cand in enumerate(remaining):
             s = self._score(prev_type, cand, window_used, remaining, cfg)
             if s > -1e-9:

@@ -1,11 +1,12 @@
 # filling_scheduler/fillscheduler/strategies/lpt_pack.py
 from __future__ import annotations
-from typing import Deque, List, Optional
+
 from collections import deque
 
-from ..models import Lot
 from ..config import AppConfig
+from ..models import Lot
 from ..rules import changeover_hours
+
 
 class LptPack:
     """
@@ -14,14 +15,17 @@ class LptPack:
     - Picker: prefer same-type that fits within the window; otherwise any that fits.
     This tends to improve window utilization; may increase changeovers.
     """
+
     def name(self) -> str:
         return "lpt-pack"
 
-    def preorder(self, lots: List[Lot], cfg: AppConfig) -> Deque[Lot]:
+    def preorder(self, lots: list[Lot], cfg: AppConfig) -> deque[Lot]:
         ordered = sorted(lots, key=lambda x: (-x.fill_hours, x.lot_type, x.lot_id))
         return deque(ordered)
 
-    def pick_next(self, remaining: Deque[Lot], prev_type: Optional[str], window_used: float, cfg: AppConfig) -> Optional[int]:
+    def pick_next(
+        self, remaining: deque[Lot], prev_type: str | None, window_used: float, cfg: AppConfig
+    ) -> int | None:
         # 1) try same-type candidates that fit
         for i, cand in enumerate(remaining):
             chg = changeover_hours(prev_type, cand.lot_type, cfg)

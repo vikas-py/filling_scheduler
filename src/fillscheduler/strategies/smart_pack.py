@@ -1,18 +1,20 @@
 # fillscheduler/strategies/smart_pack.py
 from __future__ import annotations
-from typing import Deque, List, Optional, Tuple
+
 from collections import deque
 
-from ..models import Lot
 from ..config import AppConfig
+from ..models import Lot
 from ..rules import changeover_hours
+
 
 class SmartPack:
     """Scored packing with short look-ahead, slack-waste penalty, and dynamic switch penalties."""
+
     def name(self) -> str:
         return "smart-pack"
 
-    def preorder(self, lots: List[Lot], cfg: AppConfig) -> Deque[Lot]:
+    def preorder(self, lots: list[Lot], cfg: AppConfig) -> deque[Lot]:
         # No global reorder; we pick by scores as we go
         return deque(lots)
 
@@ -27,7 +29,9 @@ class SmartPack:
         hi = getattr(cfg, "DYNAMIC_SWITCH_MULT_MAX", 1.5)
         return lo + (hi - lo) * u
 
-    def _min_need_after(self, prev_type: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _min_need_after(
+        self, prev_type: str | None, remaining: deque[Lot], cfg: AppConfig
+    ) -> float:
         best = float("inf")
         for c in remaining:
             chg = changeover_hours(prev_type, c.lot_type, cfg)
@@ -36,14 +40,27 @@ class SmartPack:
                 best = need
         return best if best != float("inf") else 0.0
 
-    def _unusable_slack(self, window_used_after: float, new_prev: Optional[str], remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _unusable_slack(
+        self,
+        window_used_after: float,
+        new_prev: str | None,
+        remaining: deque[Lot],
+        cfg: AppConfig,
+    ) -> float:
         cap = max(0.0, cfg.WINDOW_HOURS - window_used_after)
         if cap <= 1e-9:
             return 0.0
         min_need = self._min_need_after(new_prev, remaining, cfg)
         return cap if min_need > cap + 1e-9 else 0.0
 
-    def _score(self, prev_type: Optional[str], lot: Lot, window_used: float, remaining: Deque[Lot], cfg: AppConfig) -> float:
+    def _score(
+        self,
+        prev_type: str | None,
+        lot: Lot,
+        window_used: float,
+        remaining: deque[Lot],
+        cfg: AppConfig,
+    ) -> float:
         chg = changeover_hours(prev_type, lot.lot_type, cfg)
         need = chg + lot.fill_hours
         if not self._fits(window_used, need, cfg):
@@ -69,10 +86,12 @@ class SmartPack:
         )
         return score
 
-    def pick_next(self, remaining: Deque[Lot], prev_type: Optional[str], window_used: float, cfg: AppConfig) -> Optional[int]:
+    def pick_next(
+        self, remaining: deque[Lot], prev_type: str | None, window_used: float, cfg: AppConfig
+    ) -> int | None:
         K = max(1, getattr(cfg, "BEAM_WIDTH", 3))
 
-        base: List[Tuple[float, int]] = []
+        base: list[tuple[float, int]] = []
         for i, cand in enumerate(remaining):
             s = self._score(prev_type, cand, window_used, remaining, cfg)
             if s > -1e9:

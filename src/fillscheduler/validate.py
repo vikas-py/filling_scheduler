@@ -1,19 +1,23 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional
-from .models import Activity, Lot
+
 from .config import AppConfig
+from .models import Activity, Lot
+
 
 class ValidationError(Exception):
     """Raised when validation fails (used internally if you set raise_exceptions=True)."""
+
     pass
+
 
 def _fmt_hours(x: float) -> str:
     return f"{x:g}"
 
+
 def _maybe_fail_fast(
     title: str,
-    errors: List[str],
-    warnings: List[str],
+    errors: list[str],
+    warnings: list[str],
     fail_fast: bool,
     raise_exceptions: bool,
 ) -> None:
@@ -32,17 +36,19 @@ def _maybe_fail_fast(
             raise ValidationError(f"{title} failed with {len(errors)} error(s).")
         if fail_fast:
             import sys
+
             sys.exit(1)
 
+
 def validate_input_lots(
-    lots: List[Lot],
+    lots: list[Lot],
     cfg: AppConfig,
     *,
     fail_fast: bool = True,
     raise_exceptions: bool = False,
-) -> Tuple[List[str], List[str]]:
-    errors: List[str] = []
-    warnings: List[str] = []
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
 
     # Config sanity
     if cfg.FILL_RATE_VPH <= 0:
@@ -78,15 +84,16 @@ def validate_input_lots(
     _maybe_fail_fast("INPUT VALIDATION", errors, warnings, fail_fast, raise_exceptions)
     return errors, warnings
 
+
 def validate_schedule(
-    activities: List[Activity],
+    activities: list[Activity],
     cfg: AppConfig,
     *,
     fail_fast: bool = True,
     raise_exceptions: bool = False,
-) -> Tuple[List[str], List[str]]:
-    errors: List[str] = []
-    warnings: List[str] = []
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
 
     window_str = _fmt_hours(cfg.WINDOW_HOURS)
     window_sum = 0.0

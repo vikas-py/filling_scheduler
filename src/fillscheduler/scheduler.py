@@ -1,39 +1,63 @@
 # fillscheduler/scheduler.py
 from __future__ import annotations
+
 from collections import deque
 from datetime import datetime, timedelta
-from typing import List, Tuple, Optional, Deque
 
-from .models import Activity, Lot
 from .config import AppConfig
+from .models import Activity, Lot
 from .rules import changeover_hours
 from .strategies import get_strategy  # NEW
 
-def _sum_kind(activities: List[Activity], kind: str) -> float:
+
+def _sum_kind(activities: list[Activity], kind: str) -> float:
     return sum((a.end - a.start).total_seconds() for a in activities if a.kind == kind) / 3600.0
 
-def _emit_block(activities: List[Activity], block_lots: List[Lot], block_start: datetime, cfg: AppConfig) -> datetime:
+
+def _emit_block(
+    activities: list[Activity], block_lots: list[Lot], block_start: datetime, cfg: AppConfig
+) -> datetime:
     now = block_start
-    prev_type: Optional[str] = None
+    prev_type: str | None = None
     for lot in block_lots:
         chg_h = changeover_hours(prev_type, lot.lot_type, cfg)
         if chg_h > 0.0:
             chg_start = now
             chg_end = chg_start + timedelta(hours=chg_h)
-            activities.append(Activity(chg_start, chg_end, "CHANGEOVER", lot_type=f"{prev_type}->{lot.lot_type}", note=f"{int(chg_h)}h"))
+            activities.append(
+                Activity(
+                    chg_start,
+                    chg_end,
+                    "CHANGEOVER",
+                    lot_type=f"{prev_type}->{lot.lot_type}",
+                    note=f"{int(chg_h)}h",
+                )
+            )
             now = chg_end
         fill_start = now
         fill_end = fill_start + timedelta(hours=lot.fill_hours)
-        activities.append(Activity(fill_start, fill_end, "FILL", lot_id=lot.lot_id, lot_type=lot.lot_type, note=f"{lot.vials} vials"))
+        activities.append(
+            Activity(
+                fill_start,
+                fill_end,
+                "FILL",
+                lot_id=lot.lot_id,
+                lot_type=lot.lot_type,
+                note=f"{lot.vials} vials",
+            )
+        )
         now = fill_end
         prev_type = lot.lot_type
     return now
 
-def plan_schedule(lots: List[Lot], start_time: datetime, cfg: AppConfig, strategy: str = "smart-pack") -> Tuple[List[Activity], float, dict]:
-    strat = get_strategy(strategy)
-    remaining: Deque[Lot] = strat.preorder(lots, cfg)
 
-    activities: List[Activity] = []
+def plan_schedule(
+    lots: list[Lot], start_time: datetime, cfg: AppConfig, strategy: str = "smart-pack"
+) -> tuple[list[Activity], float, dict]:
+    strat = get_strategy(strategy)
+    remaining: deque[Lot] = strat.preorder(lots, cfg)
+
+    activities: list[Activity] = []
     now = start_time
 
     # Start first CLEAN
@@ -43,8 +67,8 @@ def plan_schedule(lots: List[Lot], start_time: datetime, cfg: AppConfig, strateg
     block_start = c_end
 
     window_used = 0.0
-    prev_type: Optional[str] = None
-    block_lots: List[Lot] = []
+    prev_type: str | None = None
+    block_lots: list[Lot] = []
 
     def close_and_start_new_block():
         nonlocal now, block_start, window_used, prev_type, block_lots
@@ -100,8 +124,11 @@ def plan_schedule(lots: List[Lot], start_time: datetime, cfg: AppConfig, strateg
     }
     return activities, makespan_hours, kpis
 
-def plan_schedule_in_order(lots_in_order: List[Lot], start_time: datetime, cfg: AppConfig) -> Tuple[List[Activity], float, dict]:
-    activities: List[Activity] = []
+
+def plan_schedule_in_order(
+    lots_in_order: list[Lot], start_time: datetime, cfg: AppConfig
+) -> tuple[list[Activity], float, dict]:
+    activities: list[Activity] = []
     now = start_time
 
     c_start = now
@@ -110,8 +137,8 @@ def plan_schedule_in_order(lots_in_order: List[Lot], start_time: datetime, cfg: 
     block_start = c_end
 
     window_used = 0.0
-    prev_type: Optional[str] = None
-    block_lots: List[Lot] = []
+    prev_type: str | None = None
+    block_lots: list[Lot] = []
 
     def close_and_start_new_block():
         nonlocal now, block_start, window_used, prev_type, block_lots

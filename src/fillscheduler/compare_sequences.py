@@ -1,10 +1,12 @@
 # filling_scheduler/compare_sequences.py
 from __future__ import annotations
-from pathlib import Path
-import argparse
 
+import argparse
+from pathlib import Path
+
+from fillscheduler.compare import compare_sequence_vs_optimized  # type: ignore[attr-defined]
 from fillscheduler.config import AppConfig
-from fillscheduler.compare import compare_sequence_vs_optimized
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Compare given sequence vs optimized schedule.")
@@ -12,6 +14,7 @@ def parse_args():
     p.add_argument("--data", default=None, help="Path to lots CSV (default from config).")
     p.add_argument("--out", default=None, help="Output folder (default from config).")
     return p.parse_args()
+
 
 def main():
     args = parse_args()
@@ -31,6 +34,7 @@ def main():
     print(f" - Optimized schedule: {opt_csv}")
     print(f" - KPI comparison:     {cmp_csv}")
     print(f" - HTML comparison:    {cmp_html}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,23 +1,28 @@
 # replace filling_scheduler/compare_runs.py with this
 
 from __future__ import annotations
-from pathlib import Path
-import argparse
 
-from fillscheduler.config import AppConfig
+import argparse
+from pathlib import Path
+
 from fillscheduler.compare import compare_multi_strategies
+from fillscheduler.config import AppConfig
+
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Build a single consolidated comparison report for given order and multiple strategies.")
+    p = argparse.ArgumentParser(
+        description="Build a single consolidated comparison report for given order and multiple strategies."
+    )
     p.add_argument("--data", default=None, help="Path to lots CSV (default from config).")
     p.add_argument("--out", default=None, help="Output folder (default from config).")
     p.add_argument(
         "--strategies",
         nargs="+",
-        default=["smart-pack", "spt-pack", "lpt_pack", "cfs_pack","hybrid"],
+        default=["smart-pack", "spt-pack", "lpt_pack", "cfs_pack", "hybrid"],
         help="Strategies to compare (default: smart-pack spt-pack).",
     )
     return p.parse_args()
+
 
 def main():
     args = parse_args()
@@ -39,6 +44,7 @@ def main():
     print("\nSaved consolidated outputs:")
     print(f" - KPIs CSV : {kpis_csv}")
     print(f" - HTML     : {multi_html}")
+
 
 if __name__ == "__main__":
     main()

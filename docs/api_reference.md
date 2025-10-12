@@ -40,7 +40,7 @@ def plan_schedule(
 ) -> Tuple[List[Activity], float, dict]:
     """
     Generate a schedule for the given lots.
-    
+
     Returns:
         Tuple of (activities, makespan_hours, kpis)
     """
@@ -59,7 +59,7 @@ def validate_input_lots(
 ) -> Tuple[List[str], List[str]]:
     """
     Validate input lots against constraints.
-    
+
     Returns:
         Tuple of (errors, warnings)
     """
@@ -76,7 +76,7 @@ def validate_schedule(
 ) -> Tuple[List[str], List[str]]:
     """
     Validate generated schedule.
-    
+
     Returns:
         Tuple of (errors, warnings)
     """
@@ -93,11 +93,11 @@ from collections import deque
 class MyStrategy:
     def name(self) -> str:
         return "my-strategy"
-    
+
     def preorder(self, lots: List[Lot], cfg: AppConfig) -> Deque[Lot]:
         """Optional: Reorder lots before scheduling"""
         return deque(lots)
-    
+
     def pick_next(
         self,
         remaining: Deque[Lot],
@@ -153,7 +153,7 @@ if errors:
 else:
     # Generate schedule
     activities, _, kpis = plan_schedule(lots, start_time, cfg)
-    
+
     # Validate output
     errors, warnings = validate_schedule(activities, cfg)
     if not errors:

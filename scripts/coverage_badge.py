@@ -10,18 +10,18 @@ from pathlib import Path
 def get_coverage_percentage():
     """Extract coverage percentage from coverage.xml."""
     coverage_file = Path("coverage.xml")
-    
+
     if not coverage_file.exists():
         print("❌ coverage.xml not found. Run: pytest --cov=fillscheduler")
         return None
-    
+
     tree = ET.parse(coverage_file)
     root = tree.getroot()
-    
+
     # Get line coverage
     line_rate = float(root.attrib.get("line-rate", 0))
     percentage = round(line_rate * 100, 2)
-    
+
     return percentage
 
 
@@ -49,17 +49,17 @@ def generate_badge_url(percentage):
 
 def main():
     percentage = get_coverage_percentage()
-    
+
     if percentage is None:
         return 1
-    
+
     badge_url = generate_badge_url(percentage)
-    
+
     print(f"✅ Coverage: {percentage}%")
     print(f"📊 Badge URL: {badge_url}")
-    print(f"\nAdd to README.md:")
+    print("\nAdd to README.md:")
     print(f"[![Coverage]({badge_url})](htmlcov/index.html)")
-    
+
     return 0
 
 

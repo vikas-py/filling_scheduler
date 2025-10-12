@@ -2,14 +2,15 @@
 Unit tests for compare module.
 Tests multi-strategy comparison functionality.
 """
-from pathlib import Path
+
 import pandas as pd
 import pytest
+
 from fillscheduler.compare import (
+    _delta_to_given_df,
     _kpi_float,
     _kpis_to_row,
-    _delta_to_given_df,
-    compare_multi_strategies
+    compare_multi_strategies,
 )
 from fillscheduler.config import AppConfig
 
@@ -65,12 +66,14 @@ class TestKpiFloat:
     def test_convert_invalid_string(self):
         """Test converting invalid string returns nan."""
         import math
+
         result = _kpi_float("not a number")
         assert math.isnan(result)
 
     def test_convert_empty_string(self):
         """Test converting empty string returns nan."""
         import math
+
         result = _kpi_float("")
         assert math.isnan(result)
 
@@ -81,7 +84,7 @@ class TestKpisToRow:
     def test_convert_kpis_to_row(self, sample_kpis):
         """Test converting KPIs dict to row dict."""
         row = _kpis_to_row("Test Run", sample_kpis)
-        
+
         assert row["Run"] == "Test Run"
         assert row["Makespan (h)"] == "24.5"
         assert row["Total Clean (h)"] == "2.0"
@@ -91,7 +94,7 @@ class TestKpisToRow:
         """Test converting KPIs with missing keys."""
         kpis = {"Makespan (h)": "24.5"}  # Missing other keys
         row = _kpis_to_row("Test Run", kpis)
-        
+
         assert row["Run"] == "Test Run"
         assert row["Makespan (h)"] == "24.5"
         assert row["Total Clean (h)"] == ""  # Missing keys get empty string
@@ -99,13 +102,20 @@ class TestKpisToRow:
     def test_convert_empty_kpis(self):
         """Test converting empty KPIs dict."""
         row = _kpis_to_row("Empty Run", {})
-        
+
         assert row["Run"] == "Empty Run"
         # All KPI keys should be present with empty strings
-        assert all(key in row for key in [
-            "Makespan (h)", "Total Clean (h)", "Total Changeover (h)",
-            "Total Fill (h)", "Lots Scheduled", "Clean Blocks"
-        ])
+        assert all(
+            key in row
+            for key in [
+                "Makespan (h)",
+                "Total Clean (h)",
+                "Total Changeover (h)",
+                "Total Fill (h)",
+                "Lots Scheduled",
+                "Clean Blocks",
+            ]
+        )
 
 
 class TestDeltaToGivenDf:
@@ -114,14 +124,14 @@ class TestDeltaToGivenDf:
     def test_calculate_deltas(self, sample_kpis, sample_kpis_optimized):
         """Test calculating deltas between given and optimized."""
         df = _delta_to_given_df(sample_kpis, sample_kpis_optimized, "Optimized")
-        
+
         assert len(df) == 6  # Number of KPI keys
         assert list(df.columns) == ["Metric", "Given", "Optimized", "Delta (Optimized - Given)"]
 
     def test_delta_calculation_for_hours(self, sample_kpis, sample_kpis_optimized):
         """Test that deltas are calculated for hour metrics."""
         df = _delta_to_given_df(sample_kpis, sample_kpis_optimized, "Optimized")
-        
+
         # Find Makespan row
         makespan_row = df[df["Metric"] == "Makespan (h)"].iloc[0]
         assert makespan_row["Given"] == "24.5"
@@ -131,7 +141,7 @@ class TestDeltaToGivenDf:
     def test_no_delta_for_non_hour_metrics(self, sample_kpis, sample_kpis_optimized):
         """Test that non-hour metrics don't get delta calculation."""
         df = _delta_to_given_df(sample_kpis, sample_kpis_optimized, "Optimized")
-        
+
         # Find Lots Scheduled row (not an hour metric)
         lots_row = df[df["Metric"] == "Lots Scheduled"].iloc[0]
         assert lots_row["Given"] == "4"
@@ -142,9 +152,9 @@ class TestDeltaToGivenDf:
         """Test delta calculation with missing KPI values."""
         given = {"Makespan (h)": "24.5"}
         other = {"Makespan (h)": ""}  # Missing value
-        
+
         df = _delta_to_given_df(given, other, "Test")
-        
+
         # Should handle missing values gracefully
         assert len(df) == 6
 
@@ -157,11 +167,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack"]
-        
-        kpis_csv, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        kpis_csv, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         assert kpis_csv.exists()
         assert multi_html.exists()
         assert kpis_csv.name == "kpis_all_runs.csv"
@@ -172,11 +180,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack", "spt-pack", "lpt-pack"]
-        
-        kpis_csv, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        kpis_csv, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         # Check KPIs CSV contains all runs
         df = pd.read_csv(kpis_csv)
         assert len(df) == 4  # Given + 3 strategies
@@ -190,11 +196,11 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "nonexistent" / "output"
         strategies = ["smart-pack"]
-        
+
         assert not outdir.exists()
-        
+
         compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
-        
+
         assert outdir.exists()
 
     def test_compare_generates_individual_schedules(self, sample_lots_csv, tmp_path):
@@ -202,9 +208,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack", "spt-pack"]
-        
+
         compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
-        
+
         # Check individual schedule files
         assert (outdir / "optimized_schedule_smart_pack.csv").exists()
         assert (outdir / "optimized_schedule_spt_pack.csv").exists()
@@ -214,11 +220,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack"]
-        
-        _, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        _, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         content = multi_html.read_text(encoding="utf-8")
         assert "<!DOCTYPE html>" in content
         assert "Consolidated Comparison" in content
@@ -232,11 +236,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack", "spt-pack"]
-        
-        _, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        _, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         content = multi_html.read_text(encoding="utf-8")
         assert "<details" in content
         assert "<summary>" in content
@@ -248,11 +250,9 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack"]
-        
-        _, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        _, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         content = multi_html.read_text(encoding="utf-8")
         assert "Delta to Given" in content
         assert "smart-pack" in content
@@ -262,15 +262,18 @@ class TestCompareMultiStrategies:
         cfg = AppConfig()
         outdir = tmp_path / "output"
         strategies = ["smart-pack"]
-        
-        kpis_csv, _ = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, strategies
-        )
-        
+
+        kpis_csv, _ = compare_multi_strategies(sample_lots_csv, outdir, cfg, strategies)
+
         df = pd.read_csv(kpis_csv)
         expected_columns = [
-            "Run", "Makespan (h)", "Total Clean (h)", "Total Changeover (h)",
-            "Total Fill (h)", "Lots Scheduled", "Clean Blocks"
+            "Run",
+            "Makespan (h)",
+            "Total Clean (h)",
+            "Total Changeover (h)",
+            "Total Fill (h)",
+            "Lots Scheduled",
+            "Clean Blocks",
         ]
         assert list(df.columns) == expected_columns
 
@@ -278,15 +281,13 @@ class TestCompareMultiStrategies:
         """Test comparison with empty strategies list (only given schedule)."""
         cfg = AppConfig()
         outdir = tmp_path / "output"
-        
-        kpis_csv, multi_html = compare_multi_strategies(
-            sample_lots_csv, outdir, cfg, []
-        )
-        
+
+        kpis_csv, multi_html = compare_multi_strategies(sample_lots_csv, outdir, cfg, [])
+
         # Should still generate reports with just the given schedule
         assert kpis_csv.exists()
         assert multi_html.exists()
-        
+
         df = pd.read_csv(kpis_csv)
         assert len(df) == 1  # Only Given schedule
         assert df["Run"].iloc[0] == "Given (CSV Order)"

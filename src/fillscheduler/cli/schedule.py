@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
 
@@ -8,9 +9,10 @@ from fillscheduler.io_utils import (
     write_schedule_with_pandas,
     write_summary_txt,
 )
+from fillscheduler.reporting import print_summary, write_html_report
 from fillscheduler.scheduler import plan_schedule
 from fillscheduler.validate import validate_input_lots, validate_schedule
-from fillscheduler.reporting import print_summary, write_html_report
+
 
 def main():
     cfg = AppConfig()
@@ -28,8 +30,8 @@ def main():
 
     try:
         start_dt = datetime.strptime(cfg.START_TIME_STR, "%Y-%m-%d %H:%M")
-    except ValueError:
-        raise SystemExit("Invalid START_TIME_STR in config. Use 'YYYY-MM-DD HH:MM'.")
+    except ValueError as e:
+        raise SystemExit("Invalid START_TIME_STR in config. Use 'YYYY-MM-DD HH:MM'.") from e
 
     print("Loading lots...")
     lots = read_lots_with_pandas(data_path, cfg)
@@ -58,6 +60,7 @@ def main():
         print(f"Saved HTML report to: {html_path}")
 
     print_summary(kpis, [], [], schedule_csv, summary_txt)
+
 
 if __name__ == "__main__":
     main()

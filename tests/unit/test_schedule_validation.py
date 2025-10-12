@@ -1,6 +1,5 @@
 # tests/test_schedule_validation.py
 from datetime import datetime, timedelta
-import pytest
 
 from fillscheduler.config import AppConfig
 from fillscheduler.models import Activity
@@ -53,7 +52,9 @@ def test_lot_split_error(cfg: AppConfig):
     a1_start = acts[-1].end
     # Two fills with same Lot ID "A1"
     acts.append(Activity(a1_start, a1_start + h(1.0), "FILL", lot_id="A1", lot_type="T", note=""))
-    acts.append(Activity(a1_start + h(1.0), a1_start + h(2.0), "FILL", lot_id="A1", lot_type="T", note=""))
+    acts.append(
+        Activity(a1_start + h(1.0), a1_start + h(2.0), "FILL", lot_id="A1", lot_type="T", note="")
+    )
 
     errors, warnings = validate_schedule(acts, cfg, fail_fast=False)
     assert any("Lot split detected: A1" in e for e in errors)

@@ -1,7 +1,7 @@
 # Project Review: Filling Scheduler
 
-**Review Date**: October 11, 2025  
-**Reviewer**: Claude (AI Code Assistant)  
+**Review Date**: October 11, 2025
+**Reviewer**: Claude (AI Code Assistant)
 **Project**: Pharmaceutical Filling Line Scheduler
 
 ---
@@ -30,7 +30,7 @@ This is a **well-structured, production-ready scheduling system** with excellent
 The project implements 6 different scheduling approaches:
 - **smart-pack**: Scored packing with look-ahead and slack-waste penalties (recommended)
 - **spt-pack**: Shortest Processing Time first
-- **lpt-pack**: Longest Processing Time first  
+- **lpt-pack**: Longest Processing Time first
 - **cfs-pack**: Cluster-First, Schedule-Second approach
 - **hybrid-pack**: Combined heuristic approach
 - **milp-opt**: Exact optimization using Mixed Integer Linear Programming
@@ -111,7 +111,7 @@ except ImportError:
 ### 4. **Code Organization**
 **Minor Issue**: The project has two READMEs at different levels, which could be confusing
 
-**Recommendation**: 
+**Recommendation**:
 - Keep detailed docs in `filling_scheduler/README.md`
 - Make root README a brief project overview with links
 
@@ -392,7 +392,7 @@ This is a **professionally-written, well-architected project** that demonstrates
 
 **Recommended Actions** (Priority Order):
 1. ✏️ Update root README.md with project overview
-2. 📦 Add missing dependencies (pulp) to requirements.txt  
+2. 📦 Add missing dependencies (pulp) to requirements.txt
 3. 🧪 Add strategy unit tests
 4. 📝 Document tuning parameters
 5. 🪵 Replace print with logging

@@ -1,12 +1,17 @@
 from __future__ import annotations
-from pathlib import Path
-import pandas as pd
-from .config import AppConfig
-from .models import Activity
-from .io_utils import activities_to_dataframe
 
-def print_summary(kpis: dict, errors: list[str], warnings: list[str],
-                  schedule_csv: Path, summary_txt: Path) -> None:
+from pathlib import Path
+
+import pandas as pd
+
+from .config import AppConfig
+from .io_utils import activities_to_dataframe
+from .models import Activity
+
+
+def print_summary(
+    kpis: dict, errors: list[str], warnings: list[str], schedule_csv: Path, summary_txt: Path
+) -> None:
     print("\n=== Schedule KPIs ===")
     for k, v in kpis.items():
         print(f"{k}: {v}")
@@ -23,17 +28,19 @@ def print_summary(kpis: dict, errors: list[str], warnings: list[str],
     print(f"\nSaved schedule to: {schedule_csv}")
     print(f"Saved summary to : {summary_txt}")
 
-def write_html_report(activities: list[Activity],
-                      kpis: dict,
-                      errors: list[str],
-                      warnings: list[str],
-                      path: Path,
-                      cfg: AppConfig) -> None:
+
+def write_html_report(
+    activities: list[Activity],
+    kpis: dict,
+    errors: list[str],
+    warnings: list[str],
+    path: Path,
+    cfg: AppConfig,
+) -> None:
     df_sched: pd.DataFrame = activities_to_dataframe(activities, cfg)
 
     kpi_df = pd.DataFrame(
-        [{"Metric": k, "Value": v} for k, v in kpis.items()],
-        columns=["Metric", "Value"]
+        [{"Metric": k, "Value": v} for k, v in kpis.items()], columns=["Metric", "Value"]
     )
 
     css = """

@@ -66,7 +66,7 @@ def test_with_fixture(fixtures_dir):
     """Example test using a fixture file."""
     from fillscheduler.io_utils import read_lots_with_pandas
     from fillscheduler.config import AppConfig
-    
+
     cfg = AppConfig()
     lots = read_lots_with_pandas(fixtures_dir / "simple_lots.csv", cfg)
     assert len(lots) == 3

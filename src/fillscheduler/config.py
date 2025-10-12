@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+
 @dataclass
 class AppConfig:
     # ==== File & run options ====
@@ -22,34 +23,32 @@ class AppConfig:
     CHG_DIFF_HOURS: float = 8.0
 
     # ==== Heuristic tuning (smart-pack) ====
-    UTIL_PAD_HOURS: float = 0.0        # tiny slack to avoid float rounding
-    BEAM_WIDTH: int = 3                # small look-ahead
+    UTIL_PAD_HOURS: float = 0.0  # tiny slack to avoid float rounding
+    BEAM_WIDTH: int = 3  # small look-ahead
     # Base penalties (hours). Think of these as "cost in hours" we want to avoid.
-    SCORE_ALPHA: float = 8.0           # diff-type changeover penalty (baseline)
-    SCORE_BETA: float = 4.0            # same-type changeover penalty (baseline)
+    SCORE_ALPHA: float = 8.0  # diff-type changeover penalty (baseline)
+    SCORE_BETA: float = 4.0  # same-type changeover penalty (baseline)
 
     # NEW: balance knobs
-    SLACK_WASTE_WEIGHT: float = 3.0    # penalty per hour of unusable slack left in window
-    STREAK_BONUS: float = 1.0          # bonus (hours) for staying on same type
+    SLACK_WASTE_WEIGHT: float = 3.0  # penalty per hour of unusable slack left in window
+    STREAK_BONUS: float = 1.0  # bonus (hours) for staying on same type
     # Optional: increase diff-type penalty when the window is still relatively empty
-    DYNAMIC_SWITCH_MULT_MIN: float = 1.0   # multiplier at 0% window used
-    DYNAMIC_SWITCH_MULT_MAX: float = 1.5   # multiplier at 100% window used
+    DYNAMIC_SWITCH_MULT_MIN: float = 1.0  # multiplier at 0% window used
+    DYNAMIC_SWITCH_MULT_MAX: float = 1.5  # multiplier at 100% window used
 
     # CFS tuning
     CFS_CLUSTER_ORDER: str = "by_count"  # or "by_count"
-    CFS_WITHIN: str = "LPT"                    # or "LPT"
+    CFS_WITHIN: str = "LPT"  # or "LPT"
 
     # Hybrid tuning
-    HYBRID_SAME_TYPE_BONUS: float = 2.0     # extra push to keep type streaks
-    HYBRID_SPT_WEIGHT: float = 0.5          # SPT bias when staying on same type
-    HYBRID_SWITCH_PENALTY_MULT: float = 1.1 # >1 makes switches a bit costlier than smart-pack base
+    HYBRID_SAME_TYPE_BONUS: float = 2.0  # extra push to keep type streaks
+    HYBRID_SPT_WEIGHT: float = 0.5  # SPT bias when staying on same type
+    HYBRID_SWITCH_PENALTY_MULT: float = 1.1  # >1 makes switches a bit costlier than smart-pack base
 
     # MILP tuning
-    MILP_MAX_LOTS: int = 30        # hard cap to keep model tractable
-    MILP_MAX_BLOCKS: int = 30      # defaults to n (each lot can be its own block)
-    MILP_TIME_LIMIT: int = 60      # seconds for solver
-
-
+    MILP_MAX_LOTS: int = 30  # hard cap to keep model tractable
+    MILP_MAX_BLOCKS: int = 30  # defaults to n (each lot can be its own block)
+    MILP_TIME_LIMIT: int = 60  # seconds for solver
 
     # ==== Reporting ====
     HTML_REPORT: bool = True

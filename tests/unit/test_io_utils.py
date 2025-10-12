@@ -2,18 +2,20 @@
 Unit tests for io_utils module.
 Tests CSV reading, dataframe conversion, and file writing operations.
 """
-from pathlib import Path
+
 from datetime import datetime
+
 import pandas as pd
 import pytest
-from fillscheduler.io_utils import (
-    read_lots_with_pandas,
-    activities_to_dataframe,
-    write_schedule_with_pandas,
-    write_summary_txt
-)
-from fillscheduler.models import Lot, Activity
+
 from fillscheduler.config import AppConfig
+from fillscheduler.io_utils import (
+    activities_to_dataframe,
+    read_lots_with_pandas,
+    write_schedule_with_pandas,
+    write_summary_txt,
+)
+from fillscheduler.models import Activity
 
 
 @pytest.fixture
@@ -70,7 +72,7 @@ def sample_activities():
             kind="CLEAN",
             lot_id=None,
             lot_type=None,
-            note="Initial clean"
+            note="Initial clean",
         ),
         Activity(
             start=datetime(2025, 1, 1, 10, 0),
@@ -78,7 +80,7 @@ def sample_activities():
             kind="FILL",
             lot_id="L001",
             lot_type="TypeA",
-            note=None
+            note=None,
         ),
     ]
 
@@ -90,7 +92,7 @@ class TestReadLotsWithPandas:
         """Test reading a valid lots CSV file."""
         cfg = AppConfig()
         lots = read_lots_with_pandas(sample_lots_csv, cfg)
-        
+
         assert len(lots) == 3
         assert lots[0].lot_id == "L001"
         assert lots[0].lot_type == "TypeA"
@@ -102,7 +104,7 @@ class TestReadLotsWithPandas:
         """Test that fill hours are calculated correctly."""
         cfg = AppConfig()
         lots = read_lots_with_pandas(sample_lots_csv, cfg)
-        
+
         # With default FILL_RATE_VPH = 332 * 60 = 19920
         assert lots[0].fill_hours == pytest.approx(1000 / 19920)
         assert lots[1].fill_hours == pytest.approx(2000 / 19920)
@@ -131,10 +133,10 @@ class TestReadLotsWithPandas:
         csv_content = """Lot ID,Type,Vials
   L001  ,  TypeA  ,1000"""
         csv_path.write_text(csv_content)
-        
+
         cfg = AppConfig()
         lots = read_lots_with_pandas(csv_path, cfg)
-        
+
         assert lots[0].lot_id == "L001"
         assert lots[0].lot_type == "TypeA"
 
@@ -146,7 +148,7 @@ class TestActivitiesToDataframe:
         """Test converting activities to dataframe."""
         cfg = AppConfig()
         df = activities_to_dataframe(sample_activities, cfg)
-        
+
         assert len(df) == 2
         assert list(df.columns) == ["Start", "End", "Hours", "Activity", "Lot ID", "Type", "Note"]
         assert df.iloc[0]["Activity"] == "CLEAN"
@@ -157,7 +159,7 @@ class TestActivitiesToDataframe:
         """Test that hours are calculated correctly."""
         cfg = AppConfig()
         df = activities_to_dataframe(sample_activities, cfg)
-        
+
         assert df.iloc[0]["Hours"] == 2.0  # 2 hours for CLEAN
         assert df.iloc[1]["Hours"] == 2.0  # 2 hours for FILL
 
@@ -165,7 +167,7 @@ class TestActivitiesToDataframe:
         """Test that datetime is formatted according to config."""
         cfg = AppConfig()
         df = activities_to_dataframe(sample_activities, cfg)
-        
+
         # Check format matches DATETIME_FMT
         assert "2025-01-01" in df.iloc[0]["Start"]
         assert "08:00" in df.iloc[0]["Start"]  # Start time from config is 08:00
@@ -174,7 +176,7 @@ class TestActivitiesToDataframe:
         """Test converting empty activities list."""
         cfg = AppConfig()
         df = activities_to_dataframe([], cfg)
-        
+
         assert len(df) == 0
         assert list(df.columns) == ["Start", "End", "Hours", "Activity", "Lot ID", "Type", "Note"]
 
@@ -186,9 +188,9 @@ class TestWriteScheduleWithPandas:
         """Test writing schedule to CSV file."""
         cfg = AppConfig()
         output_path = tmp_path / "schedule.csv"
-        
+
         write_schedule_with_pandas(sample_activities, output_path, cfg)
-        
+
         assert output_path.exists()
         df = pd.read_csv(output_path)
         assert len(df) == 2
@@ -198,18 +200,18 @@ class TestWriteScheduleWithPandas:
     def test_write_schedule_with_default_config(self, sample_activities, tmp_path):
         """Test writing schedule with default config when None provided."""
         output_path = tmp_path / "schedule.csv"
-        
+
         write_schedule_with_pandas(sample_activities, output_path, None)
-        
+
         assert output_path.exists()
 
     def test_write_empty_schedule(self, tmp_path):
         """Test writing empty schedule."""
         cfg = AppConfig()
         output_path = tmp_path / "empty_schedule.csv"
-        
+
         write_schedule_with_pandas([], output_path, cfg)
-        
+
         assert output_path.exists()
         df = pd.read_csv(output_path)
         assert len(df) == 0
@@ -224,9 +226,9 @@ class TestWriteSummaryTxt:
         kpis = {"Makespan (h)": "24.5", "Lots Scheduled": "10"}
         errors = ["Error 1", "Error 2"]
         warnings = ["Warning 1"]
-        
+
         write_summary_txt(kpis, errors, warnings, summary_path)
-        
+
         assert summary_path.exists()
         content = summary_path.read_text()
         assert "=== Schedule Summary ===" in content
@@ -240,9 +242,9 @@ class TestWriteSummaryTxt:
         """Test writing summary with only KPIs."""
         summary_path = tmp_path / "summary.txt"
         kpis = {"Makespan (h)": "24.5"}
-        
+
         write_summary_txt(kpis, [], [], summary_path)
-        
+
         content = summary_path.read_text()
         assert "=== Schedule Summary ===" in content
         assert "Makespan (h): 24.5" in content
@@ -252,9 +254,9 @@ class TestWriteSummaryTxt:
     def test_write_empty_summary(self, tmp_path):
         """Test writing summary with no data."""
         summary_path = tmp_path / "summary.txt"
-        
+
         write_summary_txt({}, [], [], summary_path)
-        
+
         assert summary_path.exists()
         content = summary_path.read_text()
         assert "=== Schedule Summary ===" in content

@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Deque, List, Optional, Dict, Tuple
-from collections import deque
 
-from ..models import Lot
-from ..config import AppConfig
-from ..rules import changeover_hours
+from collections import deque
 
 # PuLP
 import pulp
+
+from ..config import AppConfig
+from ..models import Lot
+from ..rules import changeover_hours
 
 
 class MilpOpt:
@@ -24,7 +24,7 @@ class MilpOpt:
         return "milp-opt"
 
     # ---- public Strategy API ----
-    def preorder(self, lots: List[Lot], cfg: AppConfig) -> Deque[Lot]:
+    def preorder(self, lots: list[Lot], cfg: AppConfig) -> deque[Lot]:
         n = len(lots)
         max_n = getattr(cfg, "MILP_MAX_LOTS", 30)
         if n > max_n:
@@ -37,7 +37,9 @@ class MilpOpt:
         order = self._solve_milp(lots, cfg)
         return deque(order)
 
-    def pick_next(self, remaining: Deque[Lot], prev_type: Optional[str], window_used: float, cfg: AppConfig) -> Optional[int]:
+    def pick_next(
+        self, remaining: deque[Lot], prev_type: str | None, window_used: float, cfg: AppConfig
+    ) -> int | None:
         # Follow exact order: if next in line fits current window, take it; else start new block.
         if not remaining:
             return None
@@ -47,14 +49,17 @@ class MilpOpt:
         return 0 if (window_used + need <= cfg.WINDOW_HOURS + 1e-9) else None
 
     # ---- MILP model ----
-    def _solve_milp(self, lots: List[Lot], cfg: AppConfig) -> List[Lot]:
+    def _solve_milp(self, lots: list[Lot], cfg: AppConfig) -> list[Lot]:
         n = len(lots)
         idx = list(range(n))
 
         # Precompute processing and setup times
         t = {i: lots[i].fill_hours for i in idx}
-        setup = {(i, j): (0.0 if i == j else (4.0 if lots[i].lot_type == lots[j].lot_type else 8.0))
-                 for i in idx for j in idx}
+        setup = {
+            (i, j): (0.0 if i == j else (4.0 if lots[i].lot_type == lots[j].lot_type else 8.0))
+            for i in idx
+            for j in idx
+        }
 
         # Upper bound on number of blocks
         # Safe upper bound: each lot can be alone => B_max = n
@@ -81,8 +86,9 @@ class MilpOpt:
         WINDOW = float(cfg.WINDOW_HOURS)
 
         # Objective: Clean cost + changeover cost (fill time is constant -> drop)
-        prob += pulp.lpSum(CLEAN * u[b] for b in range(B)) + \
-                pulp.lpSum(setup[i, j] * z[b][i][j] for b in range(B) for i in idx for j in idx if i != j)
+        prob += pulp.lpSum(CLEAN * u[b] for b in range(B)) + pulp.lpSum(
+            setup[i, j] * z[b][i][j] for b in range(B) for i in idx for j in idx if i != j
+        )
 
         # ----- Constraints -----
 
@@ -104,9 +110,15 @@ class MilpOpt:
         for b in range(B):
             for i in idx:
                 # Outgoing arcs: 1 if in block and not end; 0 if not in block
-                prob += pulp.lpSum(z[b][i][j] for j in idx if j != i) == y[b][i] - e[b][i], f"outdeg_{b}_{i}"
+                prob += (
+                    pulp.lpSum(z[b][i][j] for j in idx if j != i) == y[b][i] - e[b][i],
+                    f"outdeg_{b}_{i}",
+                )
                 # Incoming arcs: 1 if in block and not start
-                prob += pulp.lpSum(z[b][j][i] for j in idx if j != i) == y[b][i] - s[b][i], f"indeg_{b}_{i}"
+                prob += (
+                    pulp.lpSum(z[b][j][i] for j in idx if j != i) == y[b][i] - s[b][i],
+                    f"indeg_{b}_{i}",
+                )
 
         # MTZ subtour elimination for each block
         M = n  # big-M for positions
@@ -125,8 +137,8 @@ class MilpOpt:
         # Capacity per block: sum(fill) + sum(setup on arcs) <= WINDOW
         for b in range(B):
             prob += (
-                pulp.lpSum(t[i] * y[b][i] for i in idx) +
-                pulp.lpSum(setup[i, j] * z[b][i][j] for i in idx for j in idx if i != j)
+                pulp.lpSum(t[i] * y[b][i] for i in idx)
+                + pulp.lpSum(setup[i, j] * z[b][i][j] for i in idx for j in idx if i != j)
             ) <= WINDOW + (1 - u[b]) * WINDOW, f"cap_{b}"
             # The + (1-u[b])*WINDOW lets empty blocks trivially satisfy capacity.
 
@@ -140,12 +152,17 @@ class MilpOpt:
             solver = pulp.PULP_CBC_CMD(msg=False, maxSeconds=time_limit)
 
         status = prob.solve(solver)
-        if pulp.LpStatus[status] not in ("Optimal", "Not Solved", "Integer Feasible", "Optimal Infeasible"):
+        if pulp.LpStatus[status] not in (
+            "Optimal",
+            "Not Solved",
+            "Integer Feasible",
+            "Optimal Infeasible",
+        ):
             raise RuntimeError(f"MILP solver status: {pulp.LpStatus[status]}")
 
         # ----- Build order from solution -----
         # Collect block sequences in increasing block index
-        sequences: List[List[int]] = []
+        sequences: list[list[int]] = []
         for b in range(B):
             if pulp.value(u[b]) < 0.5:
                 continue
@@ -177,7 +194,7 @@ class MilpOpt:
         if len(order_ids) != n:
             # Fallback: if for any reason we missed some, append remaining by SPT
             remaining = set(idx) - set(order_ids)
-            order_ids.extend(sorted(list(remaining), key=lambda i: t[i]))
+            order_ids.extend(sorted(remaining, key=lambda i: t[i]))
 
         # Return actual Lot objects in the found order
         return [lots[i] for i in order_ids]

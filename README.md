@@ -149,7 +149,7 @@ pytest                                     # Run all tests
 pytest --cov=fillscheduler --cov-report=html  # With coverage
 ```
 
-**Current Status:** 
+**Current Status:**
 - ✅ 37/37 tests passing
 - 📊 55.3% code coverage
 - 📈 Coverage report: `htmlcov/index.html`

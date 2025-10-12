@@ -2,6 +2,7 @@ import csv
 import random
 from pathlib import Path
 
+
 def generate_dataset(
     out_path: Path,
     n_lots: int = 500,
@@ -32,6 +33,7 @@ def generate_dataset(
             writer.writerow([lot_id, lot_type, vials])
 
     print(f"✅ Generated dataset: {out_path} ({n_lots} lots, types={vial_types})")
+
 
 if __name__ == "__main__":
     out_path = Path(__file__).parent / "lots_large.csv"

@@ -1,9 +1,10 @@
 # fillscheduler/rules.py
 from __future__ import annotations
-from typing import Optional
+
 from .config import AppConfig
 
-def changeover_hours(prev_type: Optional[str], next_type: str, cfg: AppConfig) -> float:
+
+def changeover_hours(prev_type: str | None, next_type: str, cfg: AppConfig) -> float:
     """Changeover hours given previous and next lot types."""
     if prev_type is None:
         return 0.0  # first lot after CLEAN has no changeover
