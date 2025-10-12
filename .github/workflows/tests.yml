@@ -26,6 +26,19 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
 
+    - name: Run linting checks
+      run: |
+        echo "Running Black..."
+        black --check --diff src/ tests/ main.py setup.py
+        echo "Running Ruff..."
+        ruff check src/ tests/ main.py setup.py
+        echo "Running isort..."
+        isort --check-only --diff src/ tests/ main.py setup.py
+
+    - name: Run type checking
+      run: |
+        mypy src/fillscheduler --config-file mypy.ini
+
     - name: Run tests with coverage
       run: |
         pytest tests/ --cov=fillscheduler --cov-report=xml --cov-report=term-missing
