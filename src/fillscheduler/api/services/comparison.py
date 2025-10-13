@@ -10,7 +10,7 @@ import hashlib
 import json
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from fillscheduler.api.services.scheduler import (
     _convert_lot_dict_to_lot,
@@ -157,7 +157,9 @@ async def run_comparison(
                 }
             )
         else:
-            strategy_results.append({"strategy": strategies[i], **result})
+            # Type narrowing: result is dict[str, Any] here (not an Exception)
+            result_dict = cast(dict[str, Any], result)
+            strategy_results.append({"strategy": strategies[i], **result_dict})
 
     return {"results": strategy_results}
 

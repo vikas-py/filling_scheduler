@@ -190,7 +190,10 @@ class ComparisonRequest(BaseModel):
     name: str | None = Field(None, max_length=255, description="Comparison name")
     lots_data: list[dict[str, Any]] = Field(..., description="Lots data to compare")
     strategies: list[str] = Field(
-        ..., min_items=2, max_items=6, description="List of strategies to compare (2-6 strategies)"
+        ...,
+        min_length=2,
+        max_length=6,
+        description="List of strategies to compare (2-6 strategies)",
     )
     config: dict[str, Any] | None = Field(
         None, description="Shared configuration for all strategies"

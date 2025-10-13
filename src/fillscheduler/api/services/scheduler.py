@@ -214,14 +214,14 @@ async def validate_lots_data(lots_data: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def get_available_strategies() -> list[dict[str, str]]:
+def get_available_strategies() -> list[dict[str, Any]]:
     """
     Get list of available scheduling strategies.
 
     Returns:
         List of dictionaries with strategy information:
         - name: Strategy name
-        - aliases: List of alternative names
+        - aliases: List of alternative names (list of strings)
         - description: Strategy description
     """
     strategies = [

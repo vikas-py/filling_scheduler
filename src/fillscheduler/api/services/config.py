@@ -253,7 +253,7 @@ def set_user_default_config(db: Session, user_id: int, template_id: int) -> Conf
     ).update({"is_default": False})
 
     # Set new default
-    template.is_default = True
+    template.is_default = True  # type: ignore[assignment]
     db.commit()
     db.refresh(template)
 
@@ -285,7 +285,8 @@ def export_config_to_dict(template: ConfigTemplate) -> dict[str, Any]:
     Returns:
         Dictionary containing template data suitable for export
     """
-    config = json.loads(template.config_json) if template.config_json else {}
+    config_json_str: str = template.config_json  # type: ignore[assignment]
+    config = json.loads(config_json_str) if config_json_str else {}
 
     return {
         "name": template.name,
