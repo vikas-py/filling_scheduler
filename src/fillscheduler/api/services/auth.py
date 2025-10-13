@@ -22,7 +22,8 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     Returns:
         User object or None if not found
     """
-    return db.query(User).filter(User.email == email).first()
+    user: User | None = db.query(User).filter(User.email == email).first()
+    return user
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
@@ -36,7 +37,8 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
     Returns:
         User object or None if not found
     """
-    return db.query(User).filter(User.id == user_id).first()
+    user_obj: User | None = db.query(User).filter(User.id == user_id).first()
+    return user_obj
 
 
 def create_user(db: Session, user: UserCreate) -> User:

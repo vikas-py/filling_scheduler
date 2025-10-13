@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from fillscheduler.api.config import settings
 from fillscheduler.api.database.session import get_db
 from fillscheduler.api.dependencies import get_current_active_user
+from fillscheduler.api.models.database import User
 from fillscheduler.api.models.schemas import (
     MessageResponse,
     TokenResponse,
@@ -29,7 +30,7 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, db: Session = Depends(get_db)) -> User:
     """
     Register a new user.
 
@@ -56,7 +57,9 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+) -> dict[str, str]:
     """
     Login and get JWT access token.
 

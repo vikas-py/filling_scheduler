@@ -205,7 +205,7 @@ def get_user_default_config(db: Session, user_id: int) -> ConfigTemplate | None:
     Returns:
         ConfigTemplate if user has a default, None otherwise
     """
-    return (
+    template: ConfigTemplate | None = (
         db.query(ConfigTemplate)
         .filter(
             ConfigTemplate.user_id == user_id,
@@ -213,6 +213,7 @@ def get_user_default_config(db: Session, user_id: int) -> ConfigTemplate | None:
         )
         .first()
     )
+    return template
 
 
 def set_user_default_config(db: Session, user_id: int, template_id: int) -> ConfigTemplate:

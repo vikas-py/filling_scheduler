@@ -8,6 +8,7 @@ Provides functions for:
 
 import hashlib
 from datetime import datetime, timedelta
+from typing import Any
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -40,7 +41,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     # Apply the same pre-hashing if password is longer than 72 bytes
     if len(plain_password.encode("utf-8")) > 72:
         plain_password = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
-    return pwd_context.verify(plain_password, hashed_password)
+    result: bool = pwd_context.verify(plain_password, hashed_password)
+    return result
 
 
 def get_password_hash(password: str) -> str:
@@ -59,7 +61,8 @@ def get_password_hash(password: str) -> str:
     # bcrypt has a 72-byte limit. For longer passwords, pre-hash with SHA256
     if len(password.encode("utf-8")) > 72:
         password = hashlib.sha256(password.encode("utf-8")).hexdigest()
-    return pwd_context.hash(password)
+    hashed: str = pwd_context.hash(password)
+    return hashed
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -81,7 +84,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -96,7 +99,9 @@ def decode_access_token(token: str) -> dict | None:
         Decoded token payload or None if invalid
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload: dict[str, Any] = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         return payload
     except JWTError:
         return None

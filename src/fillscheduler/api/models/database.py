@@ -8,12 +8,13 @@ Defines the database schema for:
 """
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class User(Base):

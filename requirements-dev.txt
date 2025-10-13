@@ -28,6 +28,7 @@ pyyaml>=6.0  # YAML file support
 pydantic>=2.0  # Config validation
 pydantic-settings>=2.0  # Settings management
 types-PyYAML>=6.0  # Type stubs for mypy
+types-requests>=2.31  # Type stubs for requests library
 
 # Utilities
 ipython>=8.0  # Better REPL

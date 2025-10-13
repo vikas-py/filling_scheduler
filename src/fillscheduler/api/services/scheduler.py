@@ -78,9 +78,9 @@ def _create_config_from_dict(config_data: dict[str, Any] | None = None) -> AppCo
     if "CLEAN_HOURS" in config_data:
         cfg.CLEAN_HOURS = float(config_data["CLEAN_HOURS"])
     if "CHANGEOVER_MATRIX" in config_data:
-        cfg.CHANGEOVER_MATRIX = config_data["CHANGEOVER_MATRIX"]
+        cfg.CHANGEOVER_MATRIX = config_data["CHANGEOVER_MATRIX"]  # type: ignore[attr-defined]
     if "CHANGEOVER_DEFAULT" in config_data:
-        cfg.CHANGEOVER_DEFAULT = float(config_data["CHANGEOVER_DEFAULT"])
+        cfg.CHANGEOVER_DEFAULT = float(config_data["CHANGEOVER_DEFAULT"])  # type: ignore[attr-defined]
 
     return cfg
 
@@ -166,8 +166,8 @@ async def validate_lots_data(lots_data: list[dict[str, Any]]) -> dict[str, Any]:
         - warnings: List of warning messages
         - lots_count: Number of lots
     """
-    errors = []
-    warnings = []
+    errors: list[str] = []
+    warnings: list[str] = []
 
     if not lots_data:
         errors.append("No lots provided")
