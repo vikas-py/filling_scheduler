@@ -299,6 +299,7 @@ pytest --cov=fillscheduler --cov-report=html  # With coverage
 | [Restructuring TODO](Restructuring_TODO.md) | Main project roadmap (78% complete, 44/56 items) |
 | [API & Frontend Plan](API_FRONTEND_TODO.md) | 🚀 **NEW**: Detailed plan for FastAPI + React web app (172 items) |
 | [API Architecture](API_ARCHITECTURE.md) | 🚀 **NEW**: System design, data flow, deployment strategy |
+| [Phase 1.6 WebSocket Design](docs/PHASE_1.6_WEBSOCKET_DESIGN.md) | ⚡ **IN PROGRESS**: Real-time progress updates design |
 
 ---
 
