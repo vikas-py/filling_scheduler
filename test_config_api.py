@@ -89,7 +89,7 @@ def test_config_api():
     assert validate_response.status_code == 200
     validation = validate_response.json()
     print(f"   ✓ Valid config validated: valid={validation['valid']}")
-    assert validation["valid"] == True
+    assert validation["valid"] is True
 
     # Invalid configuration
     invalid_config = {
@@ -104,7 +104,7 @@ def test_config_api():
     validation_invalid = validate_response_invalid.json()
     print(f"   ✓ Invalid config detected: valid={validation_invalid['valid']}")
     print(f"     Errors: {validation_invalid['errors']}")
-    assert validation_invalid["valid"] == False
+    assert validation_invalid["valid"] is False
     assert len(validation_invalid["errors"]) > 0
 
     # ========================================================================
@@ -138,8 +138,8 @@ def test_config_api():
     print(f"     Name: {template_1['name']}")
     print(f"     Public: {template_1['is_public']}")
     print(f"     Default: {template_1['is_default']}")
-    assert template_1["is_public"] == False
-    assert template_1["is_default"] == False
+    assert template_1["is_public"] is False
+    assert template_1["is_default"] is False
 
     # ========================================================================
     # Test 4: Create public configuration template
@@ -167,7 +167,7 @@ def test_config_api():
     print(f"   ✓ Public template created: ID={template_2_id}")
     print(f"     Name: {template_2['name']}")
     print(f"     Public: {template_2['is_public']}")
-    assert template_2["is_public"] == True
+    assert template_2["is_public"] is True
 
     # ========================================================================
     # Test 5: Get configuration template by ID
@@ -261,7 +261,7 @@ def test_config_api():
     assert set_default_response.status_code == 200
     default_template = set_default_response.json()
     print(f"   ✓ Template set as default: {default_template['name']}")
-    assert default_template["is_default"] == True
+    assert default_template["is_default"] is True
 
     # ========================================================================
     # Test 11: Get user's default configuration
@@ -277,7 +277,7 @@ def test_config_api():
     user_default = get_default_response.json()
     print(f"   ✓ User's default config: {user_default['name']}")
     assert user_default["id"] == template_1_id
-    assert user_default["is_default"] == True
+    assert user_default["is_default"] is True
 
     # User 2 should have no default
     get_default_response_2 = requests.get(f"{BASE_URL}/config/default", headers=headers_2)

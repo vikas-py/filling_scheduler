@@ -84,7 +84,7 @@ def test_validate_lots(headers):
         print(f"Warnings: {result['warnings']}")
 
     assert response.status_code == 200
-    assert result["valid"] == True
+    assert result["valid"] is True
     assert result["lots_count"] == len(SAMPLE_LOTS)
     print("PASS Lots validation passed!")
 
@@ -275,7 +275,7 @@ def main():
         headers = {"Authorization": f"Bearer {token}"}
 
         # Test 1: List strategies
-        strategies = test_list_strategies(headers)
+        test_list_strategies(headers)
 
         # Test 2: Validate lots data
         test_validate_lots(headers)
@@ -284,7 +284,7 @@ def main():
         schedule_id = test_create_schedule(headers)
 
         # Test 4: Get schedule details
-        schedule_data = test_get_schedule(headers, schedule_id)
+        test_get_schedule(headers, schedule_id)
 
         # Test 5: List schedules
         test_list_schedules(headers)

@@ -9,12 +9,15 @@ import click
 from rich.console import Console
 
 from fillscheduler import __version__
+from fillscheduler.cli.compare import compare
+from fillscheduler.cli.config_cmd import config
+from fillscheduler.cli.schedule import schedule
 
 # Rich console for better output
 console = Console()
 
 # Context settings for consistent help formatting
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -65,11 +68,7 @@ def cli(ctx, verbose: bool, config: Path | None):
             console.print(f"[dim]Using config file: {config}[/dim]")
 
 
-# Import and register subcommands
-from fillscheduler.cli.compare import compare
-from fillscheduler.cli.config_cmd import config
-from fillscheduler.cli.schedule import schedule
-
+# Register subcommands
 cli.add_command(schedule)
 cli.add_command(compare)
 cli.add_command(config)

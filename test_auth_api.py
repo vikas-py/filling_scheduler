@@ -44,8 +44,8 @@ def test_register():
     result = response.json()
     assert "email" in result
     assert result["email"] == user_data["email"]
-    assert result["is_active"] == True
-    assert result["is_superuser"] == False
+    assert result["is_active"] is True
+    assert result["is_superuser"] is False
     print("✅ User registration passed!")
     return user_data["email"], user_data["password"]
 

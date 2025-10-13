@@ -10,7 +10,6 @@ Endpoints for managing configuration templates:
 """
 
 import json
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -96,11 +95,11 @@ async def list_config_templates(
 
     if public_only:
         # Show only public templates
-        query = query.filter(ConfigTemplate.is_public == True)
+        query = query.filter(ConfigTemplate.is_public.is_(True))
     else:
         # Show user's own templates + public templates
         query = query.filter(
-            (ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public == True)
+            (ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public.is_(True))
         )
 
     # Get total count
@@ -248,12 +247,12 @@ async def set_default_config_template(
     try:
         template = set_user_default_config(db, current_user.id, template_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
     return ConfigTemplateResponse.model_validate(template)
 
 
-@router.get("/config/default", response_model=Optional[ConfigTemplateResponse])
+@router.get("/config/default", response_model=ConfigTemplateResponse | None)
 async def get_default_config_template(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
@@ -321,7 +320,7 @@ async def import_config_template(
     try:
         template = import_config_from_dict(db, current_user.id, import_data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     return ConfigTemplateResponse.model_validate(template)
 
@@ -342,7 +341,7 @@ async def get_config_template(
         db.query(ConfigTemplate)
         .filter(
             ConfigTemplate.id == template_id,
-            ((ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public == True)),
+            ((ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public.is_(True))),
         )
         .first()
     )
@@ -369,7 +368,7 @@ async def export_config_template(
         db.query(ConfigTemplate)
         .filter(
             ConfigTemplate.id == template_id,
-            ((ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public == True)),
+            ((ConfigTemplate.user_id == current_user.id) | (ConfigTemplate.is_public.is_(True))),
         )
         .first()
     )

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from fillscheduler.api.config import settings
 from fillscheduler.api.database.session import init_db
+from fillscheduler.api.routers import auth, comparison, config, schedule
 
 # Create FastAPI application
 app = FastAPI(
@@ -93,8 +94,6 @@ async def health_check():
 
 
 # Add routers
-from fillscheduler.api.routers import auth, comparison, config, schedule
-
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(schedule.router, prefix="/api/v1", tags=["schedules"])
 app.include_router(comparison.router, prefix="/api/v1", tags=["comparisons"])

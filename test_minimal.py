@@ -18,8 +18,8 @@ password = "Test123456!"
 # Register
 try:
     requests.post(f"{BASE_URL}/auth/register", json={"email": email, "password": password})
-except:
-    pass
+except Exception:
+    pass  # User might already exist
 
 # Login
 resp = requests.post(f"{BASE_URL}/auth/login", data={"username": email, "password": password})

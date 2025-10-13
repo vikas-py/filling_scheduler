@@ -209,7 +209,7 @@ def get_user_default_config(db: Session, user_id: int) -> ConfigTemplate | None:
         db.query(ConfigTemplate)
         .filter(
             ConfigTemplate.user_id == user_id,
-            ConfigTemplate.is_default == True,
+            ConfigTemplate.is_default.is_(True),
         )
         .first()
     )
@@ -248,7 +248,7 @@ def set_user_default_config(db: Session, user_id: int, template_id: int) -> Conf
     # Unset any existing default
     db.query(ConfigTemplate).filter(
         ConfigTemplate.user_id == user_id,
-        ConfigTemplate.is_default == True,
+        ConfigTemplate.is_default.is_(True),
     ).update({"is_default": False})
 
     # Set new default
@@ -269,7 +269,7 @@ def unset_user_default_config(db: Session, user_id: int) -> None:
     """
     db.query(ConfigTemplate).filter(
         ConfigTemplate.user_id == user_id,
-        ConfigTemplate.is_default == True,
+        ConfigTemplate.is_default.is_(True),
     ).update({"is_default": False})
     db.commit()
 

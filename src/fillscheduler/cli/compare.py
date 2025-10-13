@@ -229,4 +229,3 @@ def _get_sort_key(data: dict, sort_by: str):
     elif sort_by == "changeovers":
         return data.get("kpis", {}).get("Changeovers", 999)
     return 0
-    cfg = AppConfig()

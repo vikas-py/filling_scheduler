@@ -48,7 +48,6 @@ async def get_current_user(
 
     # Extract user info from token
     email: str | None = payload.get("sub")
-    user_id: int | None = payload.get("user_id")
 
     if email is None:
         raise credentials_exception
