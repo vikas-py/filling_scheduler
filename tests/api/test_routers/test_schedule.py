@@ -113,7 +113,7 @@ def test_get_schedule_not_found(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_schedule_other_users_schedule(client, test_db, test_superuser):
+def test_get_schedule_other_users_schedule(client, test_db, test_user, test_superuser):
     """Test that users cannot access other users' schedules."""
     # Create schedule for superuser
     schedule = Schedule(
@@ -127,13 +127,12 @@ def test_get_schedule_other_users_schedule(client, test_db, test_superuser):
     test_db.commit()
     test_db.refresh(schedule)
 
-    # Try to access with regular user token
-    response = client.post(
-        "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "TestPassword123!"},
-    )
-    token = response.json()["access_token"]
+    # Get token for regular test user (not the superuser)
+    from fillscheduler.api.utils.security import create_access_token
 
+    token = create_access_token(data={"sub": test_user.email, "user_id": test_user.id})
+
+    # Try to access superuser's schedule with regular user token
     response = client.get(
         f"/api/v1/schedule/{schedule.id}",
         headers={"Authorization": f"Bearer {token}"},
