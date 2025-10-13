@@ -28,11 +28,29 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for user registration."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "user@example.com",
+                "password": "SecurePass123!",
+            }
+        }
+    )
+
     password: str = Field(..., min_length=8, description="Password (minimum 8 characters)")
 
 
 class UserLogin(BaseModel):
     """Schema for user login."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "user@example.com",
+                "password": "SecurePass123!",
+            }
+        }
+    )
 
     email: EmailStr
     password: str
@@ -70,6 +88,35 @@ class TokenData(BaseModel):
 
 class ScheduleRequest(BaseModel):
     """Schema for creating a new schedule."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Production Schedule - Week 42",
+                "lots_data": [
+                    {
+                        "lot_id": "LOT001",
+                        "product": "ProductA",
+                        "quantity": 1000,
+                        "priority": 1,
+                        "start_window": "2024-10-14T08:00:00",
+                        "end_window": "2024-10-14T16:00:00",
+                    },
+                    {
+                        "lot_id": "LOT002",
+                        "product": "ProductB",
+                        "quantity": 500,
+                        "priority": 2,
+                        "start_window": "2024-10-14T10:00:00",
+                        "end_window": "2024-10-14T18:00:00",
+                    },
+                ],
+                "strategy": "smart-pack",
+                "config": {"line_count": 3, "changeover_time": 30},
+                "start_time": "2024-10-14T08:00:00",
+            }
+        }
+    )
 
     name: str | None = Field(None, description="Optional schedule name")
     lots_data: list[dict[str, Any]] = Field(..., description="List of lot dictionaries")
@@ -130,6 +177,32 @@ class ScheduleListResponse(BaseModel):
 class CompareRequest(BaseModel):
     """Schema for strategy comparison request."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "lots_data": [
+                    {
+                        "lot_id": "LOT001",
+                        "product": "ProductA",
+                        "quantity": 1000,
+                        "priority": 1,
+                        "start_window": "2024-10-14T08:00:00",
+                        "end_window": "2024-10-14T16:00:00",
+                    },
+                    {
+                        "lot_id": "LOT002",
+                        "product": "ProductB",
+                        "quantity": 500,
+                        "priority": 2,
+                    },
+                ],
+                "strategies": ["smart-pack", "lpt-pack", "spt-pack"],
+                "config": {"line_count": 3, "changeover_time": 30},
+                "start_time": "2024-10-14T08:00:00",
+            }
+        }
+    )
+
     lots_data: list[dict[str, Any]] = Field(..., description="List of lot dictionaries")
     strategies: list[str] = Field(..., description="List of strategies to compare")
     config: dict[str, Any] | None = Field(None, description="Configuration overrides")
@@ -186,6 +259,30 @@ class ValidationErrorResponse(BaseModel):
 
 class ComparisonRequest(BaseModel):
     """Schema for comparison creation request."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Strategy Comparison - October 2024",
+                "lots_data": [
+                    {
+                        "lot_id": "LOT001",
+                        "product": "ProductA",
+                        "quantity": 1000,
+                        "priority": 1,
+                    },
+                    {
+                        "lot_id": "LOT002",
+                        "product": "ProductB",
+                        "quantity": 500,
+                        "priority": 2,
+                    },
+                ],
+                "strategies": ["smart-pack", "lpt-pack", "spt-pack"],
+                "config": {"line_count": 3},
+            }
+        }
+    )
 
     name: str | None = Field(None, max_length=255, description="Comparison name")
     lots_data: list[dict[str, Any]] = Field(..., description="Lots data to compare")
@@ -294,6 +391,23 @@ class ConfigTemplateBase(BaseModel):
 
 class ConfigTemplateCreate(ConfigTemplateBase):
     """Schema for creating a configuration template."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "High-Priority Production",
+                "description": "Configuration for high-priority lots with minimal changeover time",
+                "config": {
+                    "line_count": 5,
+                    "changeover_time": 30,
+                    "min_batch_size": 100,
+                    "max_makespan": 480,
+                    "priority_weight": 2.0,
+                },
+                "is_public": False,
+            }
+        }
+    )
 
     is_public: bool = Field(default=False, description="Make template visible to all users")
 

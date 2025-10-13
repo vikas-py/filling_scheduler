@@ -16,7 +16,7 @@ from fillscheduler.api.database.session import init_db
 from fillscheduler.api.routers import auth, comparison, config, schedule
 from fillscheduler.api.websocket import router as websocket_router
 
-# Create FastAPI application
+# Create FastAPI application with comprehensive OpenAPI configuration
 app = FastAPI(
     title=settings.APP_NAME,
     description=settings.APP_DESCRIPTION,
@@ -24,6 +24,51 @@ app = FastAPI(
     docs_url="/docs",  # Swagger UI
     redoc_url="/redoc",  # ReDoc
     openapi_url="/openapi.json",
+    # OpenAPI metadata
+    contact={
+        "name": "Filling Scheduler Team",
+        "url": "https://github.com/vikas-py/filling_scheduler",
+        "email": "support@fillscheduler.example.com",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    # Enhanced OpenAPI tags with descriptions
+    openapi_tags=[
+        {
+            "name": "authentication",
+            "description": "User authentication and authorization operations. Includes login, token refresh, and user management.",
+        },
+        {
+            "name": "schedules",
+            "description": "Schedule creation, retrieval, and management. Create optimized production schedules using various strategies.",
+        },
+        {
+            "name": "comparisons",
+            "description": "Strategy comparison operations. Compare multiple scheduling strategies side-by-side to find the best approach.",
+        },
+        {
+            "name": "configuration",
+            "description": "Configuration template management. Create, update, and manage scheduling configuration templates.",
+        },
+        {
+            "name": "websocket",
+            "description": "Real-time WebSocket connections. Subscribe to schedule and comparison progress updates in real-time.",
+        },
+    ],
+    # Additional OpenAPI customization
+    terms_of_service="https://github.com/vikas-py/filling_scheduler/blob/main/LICENSE",
+    servers=[
+        {
+            "url": "http://localhost:8000",
+            "description": "Development server",
+        },
+        {
+            "url": "https://api.fillscheduler.example.com",
+            "description": "Production server",
+        },
+    ],
 )
 
 # Add CORS middleware
