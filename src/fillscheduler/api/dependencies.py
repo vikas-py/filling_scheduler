@@ -94,3 +94,44 @@ async def get_current_superuser(current_user: User = Depends(get_current_active_
     if not current_user.is_superuser:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
     return current_user
+
+
+async def get_current_user_from_token(token: str, db: Session) -> User:
+    """
+    Get current user from JWT token (for WebSocket authentication).
+
+    Args:
+        token: JWT access token
+        db: Database session
+
+    Returns:
+        Current user object
+
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    # Decode token
+    payload = decode_access_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    # Extract user info from token
+    email: str | None = payload.get("sub")
+    if email is None:
+        raise credentials_exception
+
+    # Get user from database
+    user = get_user_by_email(db, email=email)
+    if user is None:
+        raise credentials_exception
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+
+    return user

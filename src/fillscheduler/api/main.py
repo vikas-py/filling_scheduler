@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from fillscheduler.api.config import settings
 from fillscheduler.api.database.session import init_db
 from fillscheduler.api.routers import auth, comparison, config, schedule
+from fillscheduler.api.websocket import router as websocket_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -131,6 +132,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(schedule.router, prefix="/api/v1", tags=["schedules"])
 app.include_router(comparison.router, prefix="/api/v1", tags=["comparisons"])
 app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
+app.include_router(websocket_router.router, prefix="/api/v1", tags=["websocket"])
 
 
 if __name__ == "__main__":

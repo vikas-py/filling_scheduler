@@ -55,9 +55,14 @@ async def _run_schedule_background(
     import traceback
 
     from fillscheduler.api.database.session import SessionLocal
+    from fillscheduler.api.websocket.tracker import progress_tracker
 
     logger = logging.getLogger(__name__)
     db = SessionLocal()
+
+    # Create progress tracker for WebSocket updates
+    tracker = progress_tracker.create_schedule_tracker(schedule_id, len(lots_data))
+
     try:
         # FIX Bug #1: Retry logic for race condition with commit
         max_retries = 3
@@ -71,6 +76,7 @@ async def _run_schedule_background(
 
         if not schedule:
             logger.error(f"Schedule {schedule_id} not found after {max_retries} retries")
+            await tracker.fail("Schedule not found in database", "NOT_FOUND")
             return
 
         try:
@@ -79,8 +85,17 @@ async def _run_schedule_background(
             schedule.started_at = datetime.utcnow()
             db.commit()
 
+            # Send initial progress update (0%)
+            await tracker.update(lots_completed=0, message="Starting schedule execution...")
+
             # Run scheduler
             result = await run_schedule(lots_data, start_time, strategy, config_data)
+
+            # Send progress update after scheduling (80%)
+            await tracker.update(
+                lots_completed=int(len(lots_data) * 0.8),
+                message="Schedule complete, saving results...",
+            )
 
             # Calculate additional stats
             stats = calculate_schedule_stats(result["activities"])
@@ -105,6 +120,14 @@ async def _run_schedule_background(
             schedule.completed_at = datetime.utcnow()
             db.commit()
 
+            # Send completion update via WebSocket
+            await tracker.complete(
+                makespan=result["makespan"],
+                utilization=stats.get("utilization", 0.0),
+                changeovers=result["changeover_count"],
+                lots_scheduled=result["lots_count"],
+            )
+
         except ValueError as e:
             # FIX Bug #6: Distinguish validation errors from bugs
             logger.warning(f"Schedule {schedule_id} validation error: {e}")
@@ -113,6 +136,9 @@ async def _run_schedule_background(
             schedule.completed_at = datetime.utcnow()
             db.commit()
 
+            # Send failure update via WebSocket
+            await tracker.fail(str(e), "VALIDATION_ERROR")
+
         except FileNotFoundError as e:
             # Missing resources (expected)
             logger.error(f"Schedule {schedule_id} resource not found: {e}")
@@ -120,6 +146,9 @@ async def _run_schedule_background(
             schedule.error_message = f"Resource Not Found: {str(e)}"
             schedule.completed_at = datetime.utcnow()
             db.commit()
+
+            # Send failure update via WebSocket
+            await tracker.fail(str(e), "FILE_NOT_FOUND")
 
         except Exception as e:
             # FIX Bug #6: Log full traceback for unexpected errors
@@ -132,8 +161,14 @@ async def _run_schedule_background(
                 schedule.error_message += f"\n\nTraceback:\n{full_traceback}"
             schedule.completed_at = datetime.utcnow()
             db.commit()
+
+            # Send failure update via WebSocket
+            await tracker.fail(schedule.error_message, type(e).__name__)
+
     finally:
         db.close()
+        # Remove tracker after completion
+        progress_tracker.remove_schedule_tracker(schedule_id)
 
 
 @router.post("/schedule", response_model=ScheduleResponse, status_code=202)
@@ -376,9 +411,7 @@ async def delete_schedule(
     except Exception as e:
         # Rollback on error to maintain consistency
         db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete schedule: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to delete schedule: {str(e)}") from e
 
     return MessageResponse(message=f"Schedule {schedule_id} deleted successfully")
 
