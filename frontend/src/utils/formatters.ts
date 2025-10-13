@@ -142,7 +142,7 @@ export const formatKPI = (key: string, value: number): string => {
     window_violations: val => val.toString(),
     execution_time: val => formatDuration(val),
   }
-  
+
   const formatter = kpiFormatters[key] || ((val: number) => formatNumber(val))
   return formatter(value)
 }

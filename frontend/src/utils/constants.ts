@@ -18,19 +18,19 @@ export const API_ENDPOINTS = {
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
   ME: '/auth/me',
-  
+
   // Schedules
   SCHEDULES: '/schedules',
   SCHEDULE_BY_ID: (id: number) => `/schedules/${id}`,
   SCHEDULE_EXPORT: (id: number, format: string) => `/schedules/${id}/export/${format}`,
   SCHEDULE_VALIDATE: '/schedules/validate',
   STRATEGIES: '/schedules/strategies',
-  
+
   // Comparisons
   COMPARISONS: '/comparisons',
   COMPARISON_BY_ID: (id: number) => `/comparisons/${id}`,
   COMPARE: '/compare',
-  
+
   // Config Templates
   CONFIGS: '/config',
   CONFIG_BY_ID: (id: number) => `/config/${id}`,
@@ -38,7 +38,7 @@ export const API_ENDPOINTS = {
   CONFIG_SET_DEFAULT: (id: number) => `/config/${id}/set-default`,
   CONFIG_VALIDATE: '/config/validate',
   CONFIG_SYSTEM_DEFAULT: '/config/system-default',
-  
+
   // Health
   ROOT: '/',
   HEALTH: '/health',
