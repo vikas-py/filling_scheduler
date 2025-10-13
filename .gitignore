@@ -7,6 +7,11 @@ __pycache__/
 .eggs/
 *.log
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Virtual env
 .venv/
 env/
