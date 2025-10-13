@@ -1,0 +1,795 @@
+{
+	"info": {
+		"_postman_id": "filling-scheduler-api-2025",
+		"name": "Filling Scheduler API",
+		"description": "Complete API collection for Filling Scheduler - Production Scheduling & Optimization Platform\n\n## Features\n- JWT Authentication\n- Schedule Creation & Management\n- Strategy Comparison\n- Configuration Templates\n- Real-time WebSocket Updates\n\n## Setup\n1. Import this collection into Postman\n2. Import the environment file (Filling_Scheduler_Environment.json)\n3. Run \"Login\" request to get access token\n4. Token is automatically saved to environment\n5. All other requests will use the token automatically\n\n## Documentation\n- API Guide: docs/API_GUIDE.md\n- OpenAPI/Swagger: http://{{baseUrl}}/docs\n- ReDoc: http://{{baseUrl}}/redoc",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "filling-scheduler"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save access token to environment",
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"accessToken\", jsonData.access_token);",
+									"    console.log(\"Access token saved to environment\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "{{userEmail}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{userPassword}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and receive JWT access token. Token is automatically saved to environment for use in subsequent requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get the current authenticated user's information."
+					},
+					"response": []
+				}
+			],
+			"description": "User authentication and authorization endpoints."
+		},
+		{
+			"name": "Schedules",
+			"item": [
+				{
+					"name": "Create Schedule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save schedule ID for other requests",
+									"if (pm.response.code === 202) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"scheduleId\", jsonData.id);",
+									"    console.log(\"Schedule ID saved: \" + jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Production Schedule - Week 42\",\n  \"lots_data\": [\n    {\n      \"lot_id\": \"LOT001\",\n      \"product\": \"ProductA\",\n      \"quantity\": 1000,\n      \"priority\": 1,\n      \"start_window\": \"2024-10-14T08:00:00\",\n      \"end_window\": \"2024-10-14T16:00:00\"\n    },\n    {\n      \"lot_id\": \"LOT002\",\n      \"product\": \"ProductB\",\n      \"quantity\": 500,\n      \"priority\": 2,\n      \"start_window\": \"2024-10-14T10:00:00\",\n      \"end_window\": \"2024-10-14T18:00:00\"\n    },\n    {\n      \"lot_id\": \"LOT003\",\n      \"product\": \"ProductA\",\n      \"quantity\": 750,\n      \"priority\": 1,\n      \"start_window\": \"2024-10-14T09:00:00\",\n      \"end_window\": \"2024-10-14T17:00:00\"\n    }\n  ],\n  \"strategy\": \"smart-pack\",\n  \"config\": {\n    \"line_count\": 3,\n    \"changeover_time\": 30\n  },\n  \"start_time\": \"2024-10-14T08:00:00\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule"
+							]
+						},
+						"description": "Create a new production schedule. Returns 202 Accepted and executes in the background. Use WebSocket or polling to get results."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Schedule",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule",
+								"{{scheduleId}}"
+							]
+						},
+						"description": "Get a specific schedule by ID with full details including results."
+					},
+					"response": []
+				},
+				{
+					"name": "List Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedules?page=1&page_size=20&status=completed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedules"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "20"
+								},
+								{
+									"key": "status",
+									"value": "completed",
+									"description": "Filter by status: pending, running, completed, failed"
+								}
+							]
+						},
+						"description": "List all schedules for the current user with pagination and filtering."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Schedule",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule",
+								"{{scheduleId}}"
+							]
+						},
+						"description": "Delete a schedule and its associated results."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Schedule (JSON)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}/export?format=json",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule",
+								"{{scheduleId}}",
+								"export"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						},
+						"description": "Export schedule in JSON format."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Schedule (CSV)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}/export?format=csv",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule",
+								"{{scheduleId}}",
+								"export"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "csv"
+								}
+							]
+						},
+						"description": "Export schedule in CSV format."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Lots Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"lots_data\": [\n    {\n      \"lot_id\": \"LOT001\",\n      \"product\": \"ProductA\",\n      \"quantity\": 1000\n    },\n    {\n      \"lot_id\": \"LOT002\",\n      \"product\": \"ProductB\",\n      \"quantity\": 500,\n      \"priority\": 2\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/schedule/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"schedule",
+								"validate"
+							]
+						},
+						"description": "Validate lots data before creating a schedule. Returns validation errors and warnings."
+					},
+					"response": []
+				},
+				{
+					"name": "List Available Strategies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/strategies",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"strategies"
+							]
+						},
+						"description": "Get list of all available scheduling strategies with descriptions."
+					},
+					"response": []
+				}
+			],
+			"description": "Schedule creation, retrieval, and management endpoints."
+		},
+		{
+			"name": "Comparisons",
+			"item": [
+				{
+					"name": "Create Comparison",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save comparison ID for other requests",
+									"if (pm.response.code === 202) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"comparisonId\", jsonData.id);",
+									"    console.log(\"Comparison ID saved: \" + jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Strategy Comparison - October 2024\",\n  \"lots_data\": [\n    {\n      \"lot_id\": \"LOT001\",\n      \"product\": \"ProductA\",\n      \"quantity\": 1000,\n      \"priority\": 1\n    },\n    {\n      \"lot_id\": \"LOT002\",\n      \"product\": \"ProductB\",\n      \"quantity\": 500,\n      \"priority\": 2\n    },\n    {\n      \"lot_id\": \"LOT003\",\n      \"product\": \"ProductA\",\n      \"quantity\": 750,\n      \"priority\": 1\n    }\n  ],\n  \"strategies\": [\n    \"smart-pack\",\n    \"lpt-pack\",\n    \"spt-pack\"\n  ],\n  \"config\": {\n    \"line_count\": 3,\n    \"changeover_time\": 30\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/compare",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"compare"
+							]
+						},
+						"description": "Compare multiple scheduling strategies side-by-side. Executes all strategies in parallel and returns comparison results."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Comparison",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/compare/{{comparisonId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"compare",
+								"{{comparisonId}}"
+							]
+						},
+						"description": "Get a specific comparison by ID with full results for all strategies."
+					},
+					"response": []
+				},
+				{
+					"name": "List Comparisons",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/comparisons?page=1&page_size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comparisons"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all comparisons for the current user with pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comparison",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/compare/{{comparisonId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"compare",
+								"{{comparisonId}}"
+							]
+						},
+						"description": "Delete a comparison and its associated results."
+					},
+					"response": []
+				}
+			],
+			"description": "Strategy comparison operations for finding the best scheduling approach."
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Create Config Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save config template ID for other requests",
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"configTemplateId\", jsonData.id);",
+									"    console.log(\"Config template ID saved: \" + jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"High-Priority Production\",\n  \"description\": \"Configuration for high-priority lots with minimal changeover time\",\n  \"config\": {\n    \"line_count\": 5,\n    \"changeover_time\": 30,\n    \"min_batch_size\": 100,\n    \"max_makespan\": 480,\n    \"priority_weight\": 2.0\n  },\n  \"is_public\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config"
+							]
+						},
+						"description": "Create a new configuration template for reuse across schedules."
+					},
+					"response": []
+				},
+				{
+					"name": "List Config Templates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/configs?page=1&page_size=20&include_public=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"configs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "20"
+								},
+								{
+									"key": "include_public",
+									"value": "true",
+									"description": "Include public templates from other users"
+								}
+							]
+						},
+						"description": "List all configuration templates accessible to the user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config Template",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/{{configTemplateId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"{{configTemplateId}}"
+							]
+						},
+						"description": "Get a specific configuration template by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Template Name\",\n  \"description\": \"Updated description\",\n  \"config\": {\n    \"line_count\": 6,\n    \"changeover_time\": 25\n  },\n  \"is_public\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/{{configTemplateId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"{{configTemplateId}}"
+							]
+						},
+						"description": "Update an existing configuration template. Only the owner can update."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Config Template",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/{{configTemplateId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"{{configTemplateId}}"
+							]
+						},
+						"description": "Delete a configuration template. Only the owner can delete."
+					},
+					"response": []
+				},
+				{
+					"name": "Set Default Config",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/{{configTemplateId}}/set-default",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"{{configTemplateId}}",
+								"set-default"
+							]
+						},
+						"description": "Set a configuration template as the user's default."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/default",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"default"
+							]
+						},
+						"description": "Get the user's default configuration template."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Configuration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"config\": {\n    \"line_count\": 3,\n    \"changeover_time\": 30,\n    \"min_batch_size\": 50\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"validate"
+							]
+						},
+						"description": "Validate a configuration object before saving or using."
+					},
+					"response": []
+				},
+				{
+					"name": "Get System Default Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/config/system/default",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"config",
+								"system",
+								"default"
+							]
+						},
+						"description": "Get the system-wide default configuration."
+					},
+					"response": []
+				}
+			],
+			"description": "Configuration template management for scheduling parameters."
+		},
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Root",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Get API information and links to documentation."
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the API is healthy and running."
+					},
+					"response": []
+				}
+			],
+			"description": "API health and information endpoints."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// This script runs before every request",
+					"console.log('Request to: ' + pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// This script runs after every request",
+					"console.log('Response status: ' + pm.response.code);"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}

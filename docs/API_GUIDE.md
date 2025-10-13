@@ -1,22 +1,24 @@
 # Filling Scheduler API - Complete Guide
 
-**Version:** 0.1.0  
-**Base URL:** `http://localhost:8000` (Development) | `https://api.fillscheduler.example.com` (Production)  
+**Version:** 0.1.0
+**Base URL:** `http://localhost:8000` (Development) | `https://api.fillscheduler.example.com` (Production)
 **Documentation:** http://localhost:8000/docs (Swagger UI) | http://localhost:8000/redoc (ReDoc)
+**Postman Collection:** [Download](../postman/Filling_Scheduler_API.postman_collection.json) | [Guide](../postman/README.md)
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Authentication](#authentication)
-3. [API Endpoints](#api-endpoints)
-4. [Request/Response Examples](#requestresponse-examples)
-5. [Error Handling](#error-handling)
-6. [Rate Limiting](#rate-limiting)
-7. [WebSocket Real-Time Updates](#websocket-real-time-updates)
-8. [Client Libraries](#client-libraries)
-9. [Best Practices](#best-practices)
+2. [Quick Start with Postman](#quick-start-with-postman)
+3. [Authentication](#authentication)
+4. [API Endpoints](#api-endpoints)
+5. [Request/Response Examples](#requestresponse-examples)
+6. [Error Handling](#error-handling)
+7. [Rate Limiting](#rate-limiting)
+8. [WebSocket Real-Time Updates](#websocket-real-time-updates)
+9. [Client Libraries](#client-libraries)
+10. [Best Practices](#best-practices)
 
 ---
 
@@ -62,6 +64,39 @@ The Filling Scheduler API is a RESTful API for creating and managing production 
        │  SQLite DB  │
        └─────────────┘
 ```
+
+---
+
+## Quick Start with Postman
+
+The fastest way to explore the API is using our Postman collection:
+
+### 1. Import Collection & Environment
+
+1. Download the collection: [Filling_Scheduler_API.postman_collection.json](../postman/Filling_Scheduler_API.postman_collection.json)
+2. Download the environment: [Filling_Scheduler_Dev.postman_environment.json](../postman/Filling_Scheduler_Dev.postman_environment.json)
+3. Import both files into Postman
+4. Select "Filling Scheduler - Development" environment
+
+### 2. Authenticate
+
+1. Open the **Authentication** folder
+2. Run the **Login** request
+3. Access token is automatically saved
+
+### 3. Create Your First Schedule
+
+1. Open the **Schedules** folder
+2. Run **Create Schedule**
+3. Run **Get Schedule** to see results
+
+### 4. Compare Strategies
+
+1. Open the **Comparisons** folder
+2. Run **Create Comparison**
+3. Run **Get Comparison** to see which strategy performed best
+
+📖 **Full Postman Guide:** [postman/README.md](../postman/README.md)
 
 ---
 
@@ -665,7 +700,7 @@ class SchedulerClient:
         self.base_url = base_url
         self.token = None
         self.login(email, password)
-    
+
     def login(self, email, password):
         """Login and store access token."""
         response = requests.post(
@@ -674,11 +709,11 @@ class SchedulerClient:
         )
         response.raise_for_status()
         self.token = response.json()["access_token"]
-    
+
     def _get_headers(self):
         """Get authorization headers."""
         return {"Authorization": f"Bearer {self.token}"}
-    
+
     def create_schedule(self, name, lots_data, strategy="smart-pack", config=None):
         """Create a new schedule."""
         try:
@@ -697,7 +732,7 @@ class SchedulerClient:
         except HTTPError as e:
             print(f"Error creating schedule: {e.response.json()}")
             raise
-    
+
     def get_schedule(self, schedule_id):
         """Get schedule by ID."""
         response = requests.get(
@@ -706,20 +741,20 @@ class SchedulerClient:
         )
         response.raise_for_status()
         return response.json()
-    
+
     def wait_for_completion(self, schedule_id, poll_interval=2):
         """Poll schedule until completion."""
         import time
-        
+
         while True:
             schedule = self.get_schedule(schedule_id)
             status = schedule["status"]
-            
+
             if status == "completed":
                 return schedule
             elif status == "failed":
                 raise Exception(f"Schedule failed: {schedule['error_message']}")
-            
+
             time.sleep(poll_interval)
 
 # Usage
@@ -751,7 +786,7 @@ async function login(email, password) {
   const formData = new URLSearchParams();
   formData.append('username', email);
   formData.append('password', password);
-  
+
   const response = await fetch('http://localhost:8000/api/v1/auth/login', {
     method: 'POST',
     headers: {
@@ -759,7 +794,7 @@ async function login(email, password) {
     },
     body: formData,
   });
-  
+
   const data = await response.json();
   return data.access_token;
 }
@@ -774,7 +809,7 @@ async function createSchedule(token, scheduleData) {
     },
     body: JSON.stringify(scheduleData),
   });
-  
+
   return await response.json();
 }
 
@@ -814,7 +849,7 @@ export async function login(email: string, password: string) {
   const formData = new URLSearchParams();
   formData.append('username', email);
   formData.append('password', password);
-  
+
   const response = await axios.post(
     `${API_BASE_URL}/api/v1/auth/login`,
     formData,
@@ -822,7 +857,7 @@ export async function login(email: string, password: string) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }
   );
-  
+
   return response.data.access_token;
 }
 
@@ -854,7 +889,7 @@ function App() {
       console.error('Error:', error);
     }
   };
-  
+
   return <button onClick={handleCreateSchedule}>Create Schedule</button>;
 }
 ```
@@ -910,7 +945,7 @@ Or for validation errors:
 }
 ```
 
-**Cause:** Invalid or expired token  
+**Cause:** Invalid or expired token
 **Solution:** Re-authenticate and get a new token
 
 #### 403 Forbidden
@@ -920,7 +955,7 @@ Or for validation errors:
 }
 ```
 
-**Cause:** User doesn't have access to the resource  
+**Cause:** User doesn't have access to the resource
 **Solution:** Check if user owns the resource or has admin privileges
 
 #### 404 Not Found
@@ -930,7 +965,7 @@ Or for validation errors:
 }
 ```
 
-**Cause:** Resource doesn't exist or user doesn't have access  
+**Cause:** Resource doesn't exist or user doesn't have access
 **Solution:** Verify the resource ID
 
 #### 422 Validation Error
@@ -946,7 +981,7 @@ Or for validation errors:
 }
 ```
 
-**Cause:** Invalid input data  
+**Cause:** Invalid input data
 **Solution:** Fix the validation errors and retry
 
 ### Error Handling Best Practices
@@ -965,7 +1000,7 @@ def create_schedule_safe(token, schedule_data):
         )
         response.raise_for_status()
         return response.json()
-    
+
     except HTTPError as e:
         if e.response.status_code == 401:
             print("Authentication failed - please login again")
@@ -977,7 +1012,7 @@ def create_schedule_safe(token, schedule_data):
         else:
             print(f"Error {e.response.status_code}: {e.response.json()}")
         raise
-    
+
     except Exception as e:
         print(f"Unexpected error: {e}")
         raise
@@ -1031,7 +1066,7 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
   const message = JSON.parse(event.data);
   console.log('Received:', message);
-  
+
   switch (message.type) {
     case 'progress':
       console.log(`Progress: ${message.progress}% - ${message.message}`);
@@ -1109,12 +1144,12 @@ interface ProgressUpdate {
 function useScheduleProgress(scheduleId: number, token: string) {
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   useEffect(() => {
     const ws = new WebSocket(
       `ws://localhost:8000/api/v1/ws/schedule/${scheduleId}?token=${token}`
     );
-    
+
     ws.onopen = () => setIsConnected(true);
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -1122,10 +1157,10 @@ function useScheduleProgress(scheduleId: number, token: string) {
     };
     ws.onerror = (error) => console.error('WebSocket error:', error);
     ws.onclose = () => setIsConnected(false);
-    
+
     return () => ws.close();
   }, [scheduleId, token]);
-  
+
   return { progress, isConnected };
 }
 
@@ -1133,10 +1168,10 @@ function useScheduleProgress(scheduleId: number, token: string) {
 function ScheduleProgress({ scheduleId }: { scheduleId: number }) {
   const token = localStorage.getItem('token') || '';
   const { progress, isConnected } = useScheduleProgress(scheduleId, token);
-  
+
   if (!isConnected) return <div>Connecting...</div>;
   if (!progress) return <div>Waiting for updates...</div>;
-  
+
   return (
     <div>
       <div>Step: {progress.step}</div>
@@ -1222,5 +1257,5 @@ See [JavaScript/TypeScript Examples](#javascripttypescript-examples)
 
 **Questions?** Check the [FAQ](FAQ.md) or [open an issue](https://github.com/vikas-py/filling_scheduler/issues).
 
-**License:** MIT  
+**License:** MIT
 **Repository:** https://github.com/vikas-py/filling_scheduler

@@ -24,7 +24,7 @@
 ```
 Auth Router Tests: 14 passing ✅, 11 skipped, 0 failing
 ├── Registration: 5/5 passing
-├── Login: 5/5 passing  
+├── Login: 5/5 passing
 ├── Current User: 2/2 passing
 └── Token: 2/2 passing
 ```
@@ -83,7 +83,7 @@ By Category:
 - Needs conversion to JSON string before database insert
 - **Fix**: Update Comparison model to use JSON column type
 
-### Config Tests (15 failing)  
+### Config Tests (15 failing)
 **Root Cause**: Routing and endpoint configuration issues
 - Many endpoints returning 405 Method Not Allowed
 - URL patterns not matching (presets, schema, export)
