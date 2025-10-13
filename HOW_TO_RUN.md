@@ -626,6 +626,77 @@ Otherwise, register a new account via the frontend.
 
 ---
 
+## Committing Configuration Changes
+
+After fixing the API endpoints and environment configuration, commit your changes:
+
+```bash
+# In Ubuntu VM
+cd ~/filling_scheduler
+
+# Check what changed
+git status
+# Should show:
+#   modified:   frontend/.env.development
+#   modified:   frontend/src/utils/constants.ts
+#   modified:   HOW_TO_RUN.md
+
+# Stage the frontend fixes
+git add frontend/src/utils/constants.ts frontend/.env.development HOW_TO_RUN.md
+
+# Commit with descriptive message
+git commit -m "fix: Update API endpoints to include /api/v1 prefix
+
+- Add /api/v1 prefix to all API endpoints in constants.ts
+- Update .env.development with VM IP address for network access
+- Fix CORS and 404 errors on login/register
+- Update HOW_TO_RUN.md with troubleshooting guide"
+
+# Push to GitHub
+git push origin main
+```
+
+**Note:** If you have conflicts with changes made on Windows, handle them first:
+
+```bash
+# Check what's staged or modified
+git status
+
+# Option 1: Commit your changes first (recommended)
+# Only commit constants.ts and HOW_TO_RUN.md (NOT .env.development)
+git add frontend/src/utils/constants.ts HOW_TO_RUN.md
+git commit -m "fix: Update API endpoints to include /api/v1 prefix"
+
+# If you accidentally staged .env.development, unstage it:
+git reset HEAD frontend/.env.development
+
+# Now pull with rebase
+git pull origin main --rebase
+
+# If conflicts occur, resolve them in your editor, then:
+git add .
+git rebase --continue
+git push origin main
+
+# Option 2: Stash changes, pull, then apply
+git stash
+git pull origin main
+git stash pop
+# Resolve any conflicts, then commit and push
+
+# Option 3: If .env.development should not be committed
+# Add it to .gitignore instead (it's environment-specific)
+echo "frontend/.env.development" >> .gitignore
+git add .gitignore
+git commit -m "chore: Ignore environment-specific .env files"
+git pull origin main --rebase
+git push origin main
+```
+
+**Best Practice:** The `.env.development` file should typically be in `.gitignore` since it contains environment-specific settings (like your VM's IP address). Only commit the `.env.example` template.
+
+---
+
 ## API Testing with Postman
 
 Import the Postman collection:
