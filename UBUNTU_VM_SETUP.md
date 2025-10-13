@@ -24,18 +24,18 @@ git pull origin main
 cat .env
 ```
 
-Should show:
+Should show (IMPORTANT: All variables must have API_ prefix):
 ```
 # Database
-DATABASE_URL=sqlite:///./fillscheduler.db
+API_DATABASE_URL=sqlite:///./fillscheduler.db
 
 # JWT Authentication
-SECRET_KEY=your-secret-key-change-this-in-production-use-openssl-rand-hex-32
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+API_SECRET_KEY=your-secret-key-change-this-in-production-use-openssl-rand-hex-32
+API_ALGORITHM=HS256
+API_ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # CORS - Comma-separated list (no quotes, no brackets)
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
+API_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
 ```
 
 **Check constants.ts has /api/v1 prefix:**
@@ -122,30 +122,30 @@ pip install -e .
 ### Error: "CORS policy" or "No 'Access-Control-Allow-Origin'"
 **Check backend is running with correct CORS:**
 ```bash
-# Verify .env has correct format (no brackets, no quotes)
-cat .env | grep CORS
+# Verify .env has correct format (no brackets, no quotes, must have API_ prefix)
+cat .env | grep API_CORS
 
-# Should show: CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
+# Should show: API_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
 ```
 
 **Restart backend after fixing .env**
 
 ### Error: "ValidationError: Extra inputs are not permitted"
-**Your .env file has wrong format. Recreate it:**
+**Your .env file is missing the API_ prefix. Recreate it:**
 ```bash
 cd ~/filling_scheduler
 
 cat > .env << 'EOF'
 # Database
-DATABASE_URL=sqlite:///./fillscheduler.db
+API_DATABASE_URL=sqlite:///./fillscheduler.db
 
 # JWT Authentication
-SECRET_KEY=your-secret-key-change-this-in-production-use-openssl-rand-hex-32
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+API_SECRET_KEY=your-secret-key-change-this-in-production-use-openssl-rand-hex-32
+API_ALGORITHM=HS256
+API_ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # CORS - Comma-separated list (no quotes, no brackets)
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
+API_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.56.101:5173
 EOF
 ```
 
