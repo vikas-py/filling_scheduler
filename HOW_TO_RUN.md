@@ -174,7 +174,8 @@ Edit `frontend/.env.development`:
 
 ```bash
 # Change from localhost to your IP address
-VITE_API_BASE_URL=http://192.168.1.100:8000
+VITE_API_URL=http://192.168.1.100:8000
+VITE_WS_URL=ws://192.168.1.100:8000
 ```
 
 Then restart the frontend:
@@ -302,7 +303,8 @@ npm run dev -- --host 0.0.0.0
 ```bash
 # Edit frontend/.env.development
 # Change localhost to VM's IP:
-VITE_API_BASE_URL=http://192.168.1.100:8000
+VITE_API_URL=http://192.168.1.100:8000
+VITE_WS_URL=ws://192.168.1.100:8000
 
 # Then restart frontend:
 npm run dev -- --host 0.0.0.0
@@ -314,7 +316,7 @@ npm run dev -- --host 0.0.0.0
 |-------|----------|
 | "Connection refused" | Backend not running or not bound to 0.0.0.0 |
 | "Connection timed out" | Firewall blocking or wrong network mode (use Bridged) |
-| Frontend loads but API fails | Check VITE_API_BASE_URL in .env.development |
+| Frontend loads but API fails | Check VITE_API_URL in .env.development |
 | Can ping but can't access port | Check if service is listening: `sudo netstat -tlnp` |
 | VM has 10.0.x.x IP (NAT) | Change to Bridged Adapter in VirtualBox settings |
 
@@ -394,7 +396,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 ### Frontend (frontend/.env.development)
 ```bash
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000
 ```
 
 ---
@@ -537,10 +540,11 @@ If accessing frontend from **Windows host** (and backend is on Ubuntu VM):
 Edit `frontend/.env.development`:
 ```bash
 # Change from localhost to VM's actual IP (NO /api/v1 here!)
-VITE_API_BASE_URL=http://192.168.56.101:8000  # Use your VM's IP
+VITE_API_URL=http://192.168.56.101:8000  # Use your VM's IP
+VITE_WS_URL=ws://192.168.56.101:8000
 ```
 
-**Note:** Don't add `/api/v1` to VITE_API_BASE_URL - that goes in the constants.ts file!
+**Note:** Don't add `/api/v1` to VITE_API_URL - that goes in the constants.ts file!
 
 **Important:** After changing `.env.development`, you MUST restart the frontend:
 ```bash
@@ -579,7 +583,7 @@ The backend should already have CORS configured for all origins in development. 
 | Backend running | `ps aux \| grep uvicorn` | Should show process |
 | Backend bound to 0.0.0.0 | `sudo netstat -tlnp \| grep 8000` | Should show `0.0.0.0:8000` |
 | Backend accessible | Visit `http://VM_IP:8000/docs` in Windows browser | Swagger UI loads |
-| Frontend .env correct | `cat frontend/.env.development` | Shows `VITE_API_BASE_URL=http://VM_IP:8000` |
+| Frontend .env correct | `cat frontend/.env.development` | Shows `VITE_API_URL=http://VM_IP:8000` and `VITE_WS_URL` |
 | Frontend restarted | After .env change | Must restart with Ctrl+C then `npm run dev -- --host 0.0.0.0` |
 
 **Example: Working Configuration**
@@ -597,7 +601,8 @@ npm run dev -- --host 0.0.0.0
 
 **frontend/.env.development:**
 ```bash
-VITE_API_BASE_URL=http://192.168.1.100:8000
+VITE_API_URL=http://192.168.1.100:8000
+VITE_WS_URL=ws://192.168.1.100:8000
 ```
 
 **Windows Browser:**

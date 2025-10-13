@@ -52,7 +52,8 @@ cat frontend/.env.development
 
 Should show:
 ```
-VITE_API_BASE_URL=http://192.168.56.101:8000
+VITE_API_URL=http://192.168.56.101:8000
+VITE_WS_URL=ws://192.168.56.101:8000
 ```
 
 ### 3. Start Backend
