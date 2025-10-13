@@ -50,12 +50,27 @@ async def _run_schedule_background(
     Updates schedule status and creates result in database.
     Creates its own database session to avoid session issues.
     """
+    import logging
+    import time
+    import traceback
+
     from fillscheduler.api.database.session import SessionLocal
 
+    logger = logging.getLogger(__name__)
     db = SessionLocal()
     try:
-        schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+        # FIX Bug #1: Retry logic for race condition with commit
+        max_retries = 3
+        schedule = None
+        for attempt in range(max_retries):
+            schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+            if schedule:
+                break
+            logger.warning(f"Schedule {schedule_id} not found, attempt {attempt + 1}/{max_retries}")
+            time.sleep(0.1 * (attempt + 1))  # Exponential backoff
+
         if not schedule:
+            logger.error(f"Schedule {schedule_id} not found after {max_retries} retries")
             return
 
         try:
@@ -90,10 +105,31 @@ async def _run_schedule_background(
             schedule.completed_at = datetime.utcnow()
             db.commit()
 
-        except Exception as e:
-            # Update schedule with error
+        except ValueError as e:
+            # FIX Bug #6: Distinguish validation errors from bugs
+            logger.warning(f"Schedule {schedule_id} validation error: {e}")
             schedule.status = "failed"
-            schedule.error_message = str(e)
+            schedule.error_message = f"Validation Error: {str(e)}"
+            schedule.completed_at = datetime.utcnow()
+            db.commit()
+
+        except FileNotFoundError as e:
+            # Missing resources (expected)
+            logger.error(f"Schedule {schedule_id} resource not found: {e}")
+            schedule.status = "failed"
+            schedule.error_message = f"Resource Not Found: {str(e)}"
+            schedule.completed_at = datetime.utcnow()
+            db.commit()
+
+        except Exception as e:
+            # FIX Bug #6: Log full traceback for unexpected errors
+            logger.exception(f"Schedule {schedule_id} unexpected error: {e}")
+            full_traceback = traceback.format_exc()
+            schedule.status = "failed"
+            schedule.error_message = f"{type(e).__name__}: {str(e)[:500]}"
+            # Store traceback in error_message if short enough, otherwise truncate
+            if len(full_traceback) < 1000:
+                schedule.error_message += f"\n\nTraceback:\n{full_traceback}"
             schedule.completed_at = datetime.utcnow()
             db.commit()
     finally:
@@ -147,12 +183,37 @@ async def create_schedule(
     db.commit()
     db.refresh(schedule)
 
-    # Parse start_time if provided
+    # FIX Bug #4: Parse start_time with proper timezone handling
     if request.start_time:
         try:
+            from datetime import timezone
+
+            # Parse with timezone awareness
             start_dt = datetime.fromisoformat(request.start_time)
-        except (ValueError, AttributeError):
-            start_dt = datetime.utcnow()
+
+            # Ensure timezone-aware
+            if start_dt.tzinfo is None:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    f"start_time has no timezone, assuming UTC: {request.start_time}"
+                )
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+
+            # Convert to UTC for consistency (remove tzinfo for naive datetime)
+            start_dt = start_dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+        except (ValueError, AttributeError) as e:
+            import logging
+
+            logging.getLogger(__name__).error(
+                f"Invalid start_time format: {request.start_time}, error: {e}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid start_time format. Use ISO 8601 format with timezone "
+                "(e.g., '2025-10-13T10:00:00+00:00' or '2025-10-13T10:00:00Z')",
+            ) from e
     else:
         start_dt = datetime.utcnow()
 
@@ -306,12 +367,18 @@ async def delete_schedule(
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
 
-    # Delete associated result first
-    db.query(ScheduleResult).filter(ScheduleResult.schedule_id == schedule_id).delete()
-
-    # Delete schedule
-    db.delete(schedule)
-    db.commit()
+    # FIX Bug #2: Use CASCADE delete (defined in model relationship)
+    # No need to manually delete ScheduleResult - SQLAlchemy handles it
+    # The model has: cascade="all, delete-orphan"
+    try:
+        db.delete(schedule)
+        db.commit()
+    except Exception as e:
+        # Rollback on error to maintain consistency
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete schedule: {str(e)}"
+        ) from e
 
     return MessageResponse(message=f"Schedule {schedule_id} deleted successfully")
 
@@ -432,14 +499,18 @@ async def validate_schedule_data(
 
 
 @router.get("/strategies", response_model=list[dict])
-async def list_strategies():
+async def list_strategies(current_user: User = Depends(get_current_active_user)):
     """
     Get list of available scheduling strategies.
+
+    FIX Bug #3: Added authentication requirement.
 
     Returns information about each strategy:
     - Name
     - Aliases
     - Description
+
+    Requires authentication.
     """
     strategies = get_available_strategies()
     return strategies

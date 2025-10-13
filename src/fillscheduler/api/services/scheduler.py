@@ -173,6 +173,20 @@ async def validate_lots_data(lots_data: list[dict[str, Any]]) -> dict[str, Any]:
         errors.append("No lots provided")
         return {"valid": False, "errors": errors, "warnings": warnings, "lots_count": 0}
 
+    # FIX Bug #5: Check duplicate lot_ids ONCE, BEFORE loop (O(N) instead of O(N²))
+    lot_ids = [lot.get("lot_id") for lot in lots_data]
+    seen = set()
+    duplicates = []
+    for lid in lot_ids:
+        if lid in seen:
+            duplicates.append(lid)
+        else:
+            seen.add(lid)
+
+    if duplicates:
+        # Make duplicates an ERROR, not a warning - this WILL cause problems
+        errors.append(f"Duplicate lot_ids found: {list(set(duplicates))}")
+
     # Validate each lot
     for i, lot in enumerate(lots_data):
         # Check required fields
@@ -200,11 +214,7 @@ async def validate_lots_data(lots_data: list[dict[str, Any]]) -> dict[str, Any]:
             except (ValueError, TypeError):
                 errors.append(f"Lot {i}: fill_hours must be a number (got {lot['fill_hours']})")
 
-        # Check lot_id uniqueness
-        lot_ids = [lot.get("lot_id") for lot in lots_data]
-        duplicates = [lid for lid in set(lot_ids) if lot_ids.count(lid) > 1]
-        if duplicates:
-            warnings.append(f"Duplicate lot_ids found: {duplicates}")
+        # FIX Bug #5: Removed duplicate check from inside loop - now handled before loop
 
     return {
         "valid": len(errors) == 0,

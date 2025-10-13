@@ -7,7 +7,7 @@ Entry point for the Filling Scheduler API.
 import traceback
 
 from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -51,9 +51,42 @@ async def shutdown_event():
 
 
 # Add exception handlers for debugging
+
+
+# FIX Bug #7: Rollback database transaction on HTTPException
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Handle HTTP exceptions with automatic database rollback.
+
+    This prevents partial database changes from being committed
+    when validation fails or other HTTP errors occur.
+    """
+    # Rollback any pending database transactions
+    # The db session is injected per-request, stored in request.state
+    if hasattr(request.state, "db"):
+        try:
+            request.state.db.rollback()
+            print(f"🔄 Rolled back database transaction for {request.method} {request.url}")
+        except Exception as rollback_error:
+            print(f"⚠️ Error during rollback: {rollback_error}")
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Catch all exceptions and return detailed error."""
+    # Also rollback on unexpected exceptions
+    if hasattr(request.state, "db"):
+        try:
+            request.state.db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors for unexpected exceptions
+
     print(f"❌ Exception in {request.method} {request.url}:")
     print(f"   {type(exc).__name__}: {exc}")
     traceback.print_exc()
