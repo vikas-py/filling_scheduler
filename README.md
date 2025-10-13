@@ -1,7 +1,8 @@
 # Filling Scheduler
 
-[![Tests](https://img.shields.io/badge/tests-126%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
+[![Tests](https://img.shields.io/badge/tests-160%20passed-brightgreen)](https://github.com/vikas-py/filling_scheduler)
 [![Coverage](https://img.shields.io/badge/coverage-74.6%25-brightgreen)](htmlcov/index.html)
+[![Code Quality](https://img.shields.io/badge/code%20quality-pre--commit%20hooks-blue)](.pre-commit-config.yaml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -26,6 +27,22 @@ A production-grade pharmaceutical filling line scheduler that optimizes lot sequ
 - ✅ Fill rate enforcement (332 vials/min = 19,920 vials/h)
 - ✅ No lot splitting allowed
 - ✅ Preflight and postflight validation
+
+### Modern Command-Line Interface
+- 🖥️ Professional CLI with Click framework
+- 🎨 Beautiful Rich terminal output with colors and progress bars
+- ⚡ Progress indicators for long operations
+- 📊 Formatted tables for KPIs and configuration
+- 🔍 Verbose mode for debugging
+- ✨ Syntax highlighting for configuration files
+
+### Configuration Management
+- ⚙️ YAML/JSON configuration file support
+- 🔧 Environment variable support (12-factor app)
+- ✅ Pydantic-based validation
+- 📋 Automatic configuration discovery
+- 💾 Export default configuration templates
+- 🔍 Configuration validation commands
 
 ### Rich Reporting
 - 📊 CSV schedule exports
@@ -56,34 +73,69 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Install the package (makes 'fillscheduler' command available)
+pip install -e .
+
 # Optional: Install MILP optimization support
 pip install pulp>=2.7
 
 # Optional: Install development dependencies
 pip install -r requirements-dev.txt
+
+# Verify installation
+fillscheduler --version
+# Output: fillscheduler, version 0.2.0
 ```
 
-### Basic Usage
+### Command-Line Interface
+
+The modern CLI provides a professional interface with progress indicators and formatted output:
 
 ```bash
-# Run with default settings (smart-pack strategy, example data)
-python main.py
+# Generate a schedule (with beautiful progress indicators)
+fillscheduler schedule --data examples/lots.csv --strategy smart-pack
 
-# Outputs will be in: ./output/
-#   - schedule.csv      (detailed schedule)
-#   - summary.txt       (KPI summary)
-#   - report.html       (interactive visualization)
+# Compare multiple strategies
+fillscheduler compare --data examples/lots.csv --strategies smart-pack spt-pack lpt-pack
+
+# Compare all available strategies
+fillscheduler compare --data examples/lots.csv --all-strategies
+
+# Export default configuration
+fillscheduler config export --output config.yaml
+
+# Validate configuration
+fillscheduler config validate --file config.yaml
+
+# Show current configuration
+fillscheduler config show
+
+# View help and options
+fillscheduler --help
+fillscheduler schedule --help
 ```
 
-### Compare Strategies
+### Using Configuration Files
 
 ```bash
-# Compare multiple strategies on the same dataset
-python compare_runs.py --data examples/lots.csv --strategies smart-pack spt-pack lpt-pack
+# Export a configuration template
+fillscheduler config export --output myconfig.yaml
 
-# Outputs:
-#   - output/comparison_kpis.csv
-#   - output/comparison_report.html
+# Edit myconfig.yaml with your preferred settings
+
+# Use the configuration file
+fillscheduler --config myconfig.yaml schedule
+
+# Override specific settings
+fillscheduler --config myconfig.yaml schedule --strategy lpt-pack --output results/
+```
+
+### Legacy Python Scripts (Deprecated)
+
+```bash
+# These still work but are deprecated - use the CLI instead
+python main.py                    # Use: fillscheduler schedule
+python compare_runs.py            # Use: fillscheduler compare
 ```
 
 ---
@@ -125,7 +177,51 @@ python compare_runs.py --data examples/lots.csv --strategies smart-pack spt-pack
 
 ## ⚙️ Configuration
 
-See full documentation in [``docs/configuration.md``](docs/configuration.md)
+The scheduler supports flexible configuration through multiple methods:
+
+### Configuration Files (Recommended)
+
+```bash
+# Export default configuration template
+python -c "from fillscheduler.config_loader import export_default_config; export_default_config('yaml')"
+
+# Creates .fillscheduler.yaml with all options documented
+```
+
+Edit the generated file:
+```yaml
+# .fillscheduler.yaml
+strategy: "milp"
+fill_rate_vph: 20000.0
+strategies:
+  milp:
+    time_limit: 120
+```
+
+Configuration files are automatically discovered from:
+1. `.fillscheduler.yaml` in current directory
+2. `~/.config/fillscheduler/config.yaml` for user-wide settings
+
+### Environment Variables
+
+```bash
+export FILLSCHEDULER_STRATEGY=milp
+export FILLSCHEDULER_STRATEGIES__MILP__TIME_LIMIT=120
+```
+
+### Programmatic Configuration
+
+```python
+from fillscheduler.config_loader import load_config_with_overrides
+from pathlib import Path
+
+config = load_config_with_overrides(
+    config_path=Path("my_config.yaml"),
+    overrides={"strategy": "smart-pack"}
+)
+```
+
+📖 **Full documentation:** [``docs/configuration.md``](docs/configuration.md)
 
 ---
 
@@ -150,9 +246,11 @@ pytest --cov=fillscheduler --cov-report=html  # With coverage
 ```
 
 **Current Status:**
-- ✅ 37/37 tests passing
-- 📊 55.3% code coverage
+- ✅ 160/160 tests passing (+334% from initial 37 tests)
+- 📊 74.6% code coverage (+35% from initial 55.3%)
 - 📈 Coverage report: `htmlcov/index.html`
+- 🎯 34 tests for configuration validation
+- 🧪 Test fixtures: 20 CSV files for comprehensive testing
 
 ### Coverage by Module
 
@@ -185,13 +283,34 @@ pytest --cov=fillscheduler --cov-report=html  # With coverage
 
 ## 📚 Documentation
 
+### User Documentation
 | Document | Description |
 |:---------|:------------|
 | [Getting Started](docs/getting_started.md) | Installation, first schedule, troubleshooting |
+| [Configuration Guide](docs/configuration.md) | YAML/JSON configs, environment variables, validation |
 | [Strategies Guide](docs/strategies.md) | Detailed strategy comparison (4500+ words) |
-| [Configuration](docs/configuration.md) | All configuration options |
+| [Type Checking](docs/type_checking.md) | mypy configuration and type hints guide |
 | [API Reference](docs/api_reference.md) | Programmatic usage |
 | [Examples](docs/examples.md) | Real-world scenarios |
+
+### Project Planning
+| Document | Description |
+|:---------|:------------|
+| [Restructuring TODO](Restructuring_TODO.md) | Main project roadmap (78% complete, 44/56 items) |
+| [API & Frontend Plan](API_FRONTEND_TODO.md) | 🚀 **NEW**: Detailed plan for FastAPI + React web app (172 items) |
+| [API Architecture](API_ARCHITECTURE.md) | 🚀 **NEW**: System design, data flow, deployment strategy |
+
+---
+
+## 🚀 Future: Web Application
+
+A comprehensive plan for a full-stack web application is available! See:
+- **[API_FRONTEND_TODO.md](API_FRONTEND_TODO.md)** - Complete 172-item implementation plan
+- **[API_ARCHITECTURE.md](API_ARCHITECTURE.md)** - Architecture diagrams and design
+
+**Tech Stack**: FastAPI + React 18 + Vite + TypeScript + Material-UI + PostgreSQL
+**Features**: Authentication, real-time progress (WebSocket), interactive Gantt charts, strategy comparison dashboards
+**Timeline**: 8-12 weeks for MVP
 
 ---
 

@@ -27,6 +27,12 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install the package (makes 'fillscheduler' command available)
+pip install -e .
+
+# Verify installation
+fillscheduler --version
 ```
 
 ### Optional: MILP Support
@@ -47,7 +53,16 @@ pip install -r requirements-dev.txt
 
 # Install in editable mode
 pip install -e .
+
+# Install pre-commit hooks (recommended)
+pip install pre-commit
+pre-commit install
+
+# Run tests
+pytest tests/ -v
 ```
+
+With pre-commit hooks enabled, your code will automatically be formatted and checked before each commit.
 
 ## Your First Schedule
 
@@ -70,13 +85,35 @@ Or use the included example:
 
 ### 2. Run the Scheduler
 
+Using the modern CLI (recommended):
+
 ```bash
-python main.py
+fillscheduler schedule --data examples/lots.csv
+```
+
+Or with a specific strategy:
+
+```bash
+fillscheduler schedule --data examples/lots.csv --strategy smart-pack
+```
+
+You'll see beautiful progress indicators:
+
+```
+⠋ Loading lots from CSV...
+✓ Loaded 15 lots
+⠋ Validating input lots...
+✓ Input validation passed
+⠋ Planning schedule using smart-pack strategy...
+✓ Schedule generated in 513.16 hours
+⠋ Writing outputs...
+
+✓ Schedule completed successfully!
 ```
 
 This will:
-- Read `examples/lots.csv` (default)
-- Generate schedule using `smart-pack` strategy (default)
+- Read your CSV file
+- Generate schedule using the specified strategy
 - Output to `output/` directory
 
 ### 3. View Results
@@ -89,12 +126,57 @@ Check the output directory:
 
 ## Configuration
 
-### Basic Configuration
+You can configure Filling Scheduler in three ways:
 
-Edit `src/fillscheduler/config.py`:
+### 1. Configuration Files (Recommended)
+
+Create a `config.yaml` file:
+
+```yaml
+data:
+  input_path: "examples/lots.csv"
+  output_dir: "output"
+
+schedule:
+  strategy: "smart-pack"
+  start_time: "2025-01-01 08:00"
+
+constraints:
+  window_hours: 120.0
+  clean_hours: 24.0
+  changeover_same_hours: 4.0
+  changeover_diff_hours: 8.0
+```
+
+Then use it with the CLI:
+
+```bash
+fillscheduler --config config.yaml schedule
+```
+
+Or export a template first:
+
+```bash
+fillscheduler config export --output myconfig.yaml
+# Edit myconfig.yaml with your preferred settings
+fillscheduler --config myconfig.yaml schedule
+```
+
+See the [Configuration Guide](configuration.md) for complete details.
+
+### 2. Environment Variables
+
+```bash
+export FILLSCHEDULER_STRATEGY="smart-pack"
+export FILLSCHEDULER_DATA_PATH="my_data.csv"
+fillscheduler schedule
+```
+
+### 3. Programmatic Configuration
 
 ```python
 from fillscheduler.config import AppConfig
+from pathlib import Path
 
 cfg = AppConfig(
     DATA_PATH=Path("my_data.csv"),
@@ -113,10 +195,92 @@ Available strategies:
 - `hybrid-pack` - Balanced approach
 - `milp-opt` - Exact optimization (small datasets only, ≤30 lots)
 
-Example:
+Example (CLI):
+
+```bash
+fillscheduler schedule --data lots.csv --strategy lpt-pack
+```
+
+Example (Programmatic):
 
 ```python
 cfg = AppConfig(STRATEGY="lpt-pack")
+```
+
+## CLI Commands
+
+### Schedule Command
+
+```bash
+# Basic usage
+fillscheduler schedule --data lots.csv
+
+# With options
+fillscheduler schedule \
+  --data lots.csv \
+  --strategy smart-pack \
+  --output results/ \
+  --start-time "2025-01-15 08:00"
+
+# Skip validation (not recommended)
+fillscheduler schedule --data lots.csv --no-validation
+
+# Skip HTML report generation
+fillscheduler schedule --data lots.csv --no-report
+
+# View all options
+fillscheduler schedule --help
+```
+
+### Compare Command
+
+```bash
+# Compare specific strategies
+fillscheduler compare --data lots.csv --strategies smart-pack spt-pack lpt-pack
+
+# Compare all strategies
+fillscheduler compare --data lots.csv --all-strategies
+
+# Sort by utilization instead of makespan
+fillscheduler compare --data lots.csv --all-strategies --sort-by utilization
+
+# View all options
+fillscheduler compare --help
+```
+
+### Config Commands
+
+```bash
+# Export default configuration template
+fillscheduler config export --output config.yaml
+
+# Export JSON format
+fillscheduler config export --output config.json --format json
+
+# Validate a configuration file
+fillscheduler config validate --file config.yaml
+
+# Show current configuration
+fillscheduler config show
+
+# Show configuration from file
+fillscheduler config show --file config.yaml
+```
+
+### Global Options
+
+```bash
+# Enable verbose mode (detailed output)
+fillscheduler --verbose schedule --data lots.csv
+
+# Use configuration file
+fillscheduler --config config.yaml schedule
+
+# Show version
+fillscheduler --version
+
+# Show help
+fillscheduler --help
 ```
 
 ## Next Steps

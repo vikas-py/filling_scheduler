@@ -18,6 +18,9 @@ venv/
 
 # Outputs
 output/
+*.db
+test-*.yaml
+test-*.json
 
 # Testing & Coverage
 .pytest_cache/

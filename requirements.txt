@@ -3,3 +3,27 @@ pulp>=2.7  # Optional: Required for MILP optimization strategy
 pyyaml>=6.0  # YAML configuration file support
 pydantic>=2.0  # Configuration validation
 pydantic-settings>=2.0  # Settings management
+click>=8.0  # CLI framework
+rich>=13.0  # Terminal formatting and progress bars
+
+# API Framework
+fastapi>=0.104.0  # Modern web framework
+uvicorn[standard]>=0.24.0  # ASGI server
+python-multipart>=0.0.6  # File upload support
+
+# Database
+sqlalchemy>=2.0.0  # ORM
+alembic>=1.12.0  # Database migrations
+
+# Authentication
+python-jose[cryptography]>=3.3.0  # JWT tokens
+passlib[bcrypt]>=1.7.4  # Password hashing
+email-validator>=2.0.0  # Email validation for Pydantic EmailStr
+bcrypt>=4.0.0,<5.0.0  # bcrypt 4.x for passlib compatibility (5.x has API changes)
+
+# WebSocket & Async
+websockets>=12.0  # Real-time updates
+aiofiles>=23.2.1  # Async file operations
+
+# Additional
+python-dotenv>=1.0.0  # Environment variables

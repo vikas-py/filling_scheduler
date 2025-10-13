@@ -1,5 +1,8 @@
 name: Tests with Coverage
 
+# Runs 160 tests with 74.6% coverage
+# Includes linting (Black, Ruff, isort) and type checking (mypy)
+
 on:
   push:
     branches: [ main, develop ]
@@ -29,11 +32,11 @@ jobs:
     - name: Run linting checks
       run: |
         echo "Running Black..."
-        black --check --diff src/ tests/ main.py setup.py
+        black --check --diff src/ tests/ main.py setup.py compare_runs.py scripts/
         echo "Running Ruff..."
-        ruff check src/ tests/ main.py setup.py
+        ruff check src/ tests/ main.py setup.py compare_runs.py scripts/
         echo "Running isort..."
-        isort --check-only --diff src/ tests/ main.py setup.py
+        isort --check-only --diff src/ tests/ main.py setup.py compare_runs.py scripts/
 
     - name: Run type checking
       run: |
@@ -41,7 +44,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        pytest tests/ --cov=fillscheduler --cov-report=xml --cov-report=term-missing
+        pytest tests/ --cov=src/fillscheduler --cov-report=xml --cov-report=term-missing --cov-report=html
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

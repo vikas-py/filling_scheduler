@@ -5,8 +5,9 @@ Welcome to the Filling Scheduler documentation!
 ## Contents
 
 - [Getting Started](getting_started.md) - Installation and first steps
+- [Configuration Guide](configuration.md) - YAML/JSON configs, environment variables, validation
 - [Strategies](strategies.md) - Detailed guide to all scheduling strategies
-- [Configuration](configuration.md) - Configuration options and tuning
+- [Type Checking](type_checking.md) - mypy configuration and type hints guide
 - [API Reference](api_reference.md) - Function and class documentation
 - [Examples](examples.md) - Usage examples and tutorials
 
@@ -23,6 +24,11 @@ Filling Scheduler is a production-grade pharmaceutical filling line scheduler th
 ### Key Features
 
 - **6 Scheduling Strategies**: From fast heuristics to exact MILP optimization
+- **Configuration Management**: YAML/JSON files with Pydantic validation
+- **Environment Variable Support**: 12-factor app compliant
+- **Type Safety**: Full mypy type checking with enhanced strictness
+- **Comprehensive Testing**: 160 tests with 74.6% coverage
+- **Code Quality**: Pre-commit hooks with Black, Ruff, isort, mypy
 - **Strict Validation**: Comprehensive constraint checking
 - **Rich Reporting**: CSV exports and interactive HTML reports
 - **Extensible**: Easy to add new strategies via the Strategy protocol

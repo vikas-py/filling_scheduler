@@ -2,6 +2,8 @@
 
 Filling Scheduler provides 6 different scheduling strategies, each with different trade-offs between speed, solution quality, and use cases.
 
+> **Note**: All configuration examples in this guide show programmatic configuration using `AppConfig`. You can also use [configuration files](configuration.md) (YAML/JSON) or environment variables for all settings shown.
+
 ## Strategy Comparison
 
 | Strategy | Speed | Quality | Memory | Best For |

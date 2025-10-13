@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "filling-scheduler"
-version = "0.1.0"
+version = "0.2.0"
 description = "Pharmaceutical filling line scheduler with multiple optimization strategies"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -34,6 +34,8 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    "click>=8.0",
+    "rich>=13.0",
 ]
 
 [project.optional-dependencies]
@@ -59,7 +61,7 @@ all = [
 ]
 
 [project.scripts]
-fillscheduler = "fillscheduler.main:main"
+fillscheduler = "fillscheduler.cli.main:main"
 
 [project.urls]
 Homepage = "https://github.com/vikas-py/filling_scheduler"
