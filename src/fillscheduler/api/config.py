@@ -4,6 +4,7 @@ API configuration settings.
 Uses pydantic-settings for configuration management with environment variable support.
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -59,6 +60,21 @@ class APISettings(BaseSettings):
     # Rate Limiting (future)
     RATE_LIMIT_ENABLED: bool = False
     RATE_LIMIT_PER_MINUTE: int = 60
+
+    @field_validator(
+        "CORS_ORIGINS",
+        "CORS_ALLOW_METHODS",
+        "CORS_ALLOW_HEADERS",
+        "ALLOWED_EXTENSIONS",
+        mode="before",
+    )
+    @classmethod
+    def parse_list_fields(cls, v: str | list[str]) -> list[str]:
+        """Parse list fields from comma-separated string or list."""
+        if isinstance(v, str):
+            # Split by comma and strip whitespace
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
 
 
 # Global settings instance
