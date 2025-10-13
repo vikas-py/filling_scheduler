@@ -15,29 +15,29 @@ export const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
 
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  ME: '/auth/me',
+  LOGIN: '/api/v1/auth/login',
+  REGISTER: '/api/v1/auth/register',
+  ME: '/api/v1/auth/me',
 
   // Schedules
-  SCHEDULES: '/schedules',
-  SCHEDULE_BY_ID: (id: number) => `/schedules/${id}`,
-  SCHEDULE_EXPORT: (id: number, format: string) => `/schedules/${id}/export/${format}`,
-  SCHEDULE_VALIDATE: '/schedules/validate',
-  STRATEGIES: '/schedules/strategies',
+  SCHEDULES: '/api/v1/schedules',
+  SCHEDULE_BY_ID: (id: number) => `/api/v1/schedules/${id}`,
+  SCHEDULE_EXPORT: (id: number, format: string) => `/api/v1/schedules/${id}/export/${format}`,
+  SCHEDULE_VALIDATE: '/api/v1/schedules/validate',
+  STRATEGIES: '/api/v1/schedules/strategies',
 
   // Comparisons
-  COMPARISONS: '/comparisons',
-  COMPARISON_BY_ID: (id: number) => `/comparisons/${id}`,
-  COMPARE: '/compare',
+  COMPARISONS: '/api/v1/comparisons',
+  COMPARISON_BY_ID: (id: number) => `/api/v1/comparisons/${id}`,
+  COMPARE: '/api/v1/compare',
 
   // Config Templates
-  CONFIGS: '/config',
-  CONFIG_BY_ID: (id: number) => `/config/${id}`,
-  CONFIG_DEFAULT: '/config/default',
-  CONFIG_SET_DEFAULT: (id: number) => `/config/${id}/set-default`,
-  CONFIG_VALIDATE: '/config/validate',
-  CONFIG_SYSTEM_DEFAULT: '/config/system-default',
+  CONFIGS: '/api/v1/config',
+  CONFIG_BY_ID: (id: number) => `/api/v1/config/${id}`,
+  CONFIG_DEFAULT: '/api/v1/config/default',
+  CONFIG_SET_DEFAULT: (id: number) => `/api/v1/config/${id}/set-default`,
+  CONFIG_VALIDATE: '/api/v1/config/validate',
+  CONFIG_SYSTEM_DEFAULT: '/api/v1/config/system-default',
 
   // Health
   ROOT: '/',
