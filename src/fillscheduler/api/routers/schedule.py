@@ -223,7 +223,7 @@ async def create_schedule_from_file(
         # Convert CSV rows to lots_data format
         # Default fill rate: 19,920 vials/hour (332 vials/min * 60 min/h)
         FILL_RATE_VPH = 19920.0
-        
+
         lots_data = []
         for row in csv_reader:
             # Map CSV columns to expected format
@@ -268,10 +268,10 @@ async def create_schedule_from_file(
         )
 
     # Create schedule record
+    # Note: description is ignored as Schedule model doesn't have this field
     schedule = Schedule(
         user_id=current_user.id,
         name=name,
-        description=description,
         strategy=strategy,
         status="pending",
         config_json=json_module.dumps(config_dict),
