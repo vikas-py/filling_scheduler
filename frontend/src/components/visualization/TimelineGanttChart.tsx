@@ -7,15 +7,7 @@ import {
   ToggleButton,
   Chip,
   Stack,
-  Tooltip as MuiTooltip,
-  IconButton,
 } from '@mui/material';
-import {
-  ZoomIn,
-  ZoomOut,
-  ZoomOutMap,
-  FilterList,
-} from '@mui/icons-material';
 
 interface Activity {
   id: string;
@@ -208,7 +200,7 @@ export const TimelineGanttChart = ({
           <ToggleButtonGroup
             value={zoomLevel}
             exclusive
-            onChange={(e, value) => value && setZoomLevel(value)}
+            onChange={(_e, value) => value && setZoomLevel(value)}
             size="small"
           >
             <ToggleButton value="1h">1h</ToggleButton>
@@ -227,7 +219,7 @@ export const TimelineGanttChart = ({
           <ToggleButtonGroup
             value={filterType}
             exclusive
-            onChange={(e, value) => value && setFilterType(value)}
+            onChange={(_e, value) => value && setFilterType(value)}
             size="small"
           >
             <ToggleButton value="all">All</ToggleButton>
