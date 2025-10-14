@@ -6,6 +6,7 @@ import { Register } from '@/pages/Register'
 import { Dashboard } from '@/pages/Dashboard'
 import { ScheduleCreate } from '@/pages/ScheduleCreate'
 import { ScheduleDetail } from '@/pages/ScheduleDetail'
+import { Compare } from '@/pages/Compare'
 import { ROUTES } from '@/utils/constants'
 
 export const router = createBrowserRouter([
@@ -51,7 +52,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.COMPARE,
-        element: <div>Compare Page (Coming Soon)</div>,
+        element: <Compare />,
       },
       {
         path: ROUTES.CONFIG,
