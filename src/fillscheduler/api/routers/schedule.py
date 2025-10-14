@@ -27,6 +27,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from fillscheduler.api.database.session import get_db
@@ -503,6 +504,103 @@ async def list_schedules(
     return ScheduleListResponse(
         schedules=schedule_responses, total=total, page=page, page_size=page_size
     )
+
+
+@router.get("/schedules/stats", response_model=dict)
+async def get_schedules_stats(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    status: str | None = Query(None, description="Filter by status"),
+    strategy: str | None = Query(None, description="Filter by strategy"),
+    search: str | None = Query(None, description="Search by schedule name"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Return summary statistics for user's schedules, supporting filter, search, and pagination.
+
+    Returns:
+    - KPI stats (total, active, completed, failed schedules)
+    - Distribution data for charts (strategies_distribution, status_distribution)
+    - Paginated schedules list
+    - Pagination metadata
+    """
+    # Build base query for filtered results
+    query = db.query(Schedule).filter(Schedule.user_id == current_user.id)
+    if status:
+        query = query.filter(Schedule.status == status)
+    if strategy:
+        query = query.filter(Schedule.strategy == strategy)
+    if search:
+        query = query.filter(Schedule.name.ilike(f"%{search}%"))
+
+    # Get total count for filtered query
+    total_filtered = query.count()
+
+    # Pagination
+    offset = (page - 1) * page_size
+    schedules_page = (
+        query.order_by(Schedule.created_at.desc()).offset(offset).limit(page_size).all()
+    )
+
+    # Get overall stats (not filtered - for KPIs and charts)
+    all_query = db.query(Schedule).filter(Schedule.user_id == current_user.id)
+    status_counts = dict(
+        db.query(Schedule.status, func.count())
+        .filter(Schedule.user_id == current_user.id)
+        .group_by(Schedule.status)
+        .all()
+    )
+    strategy_counts = dict(
+        db.query(Schedule.strategy, func.count())
+        .filter(Schedule.user_id == current_user.id)
+        .group_by(Schedule.strategy)
+        .all()
+    )
+    total_schedules = all_query.count()
+    active_schedules = status_counts.get("pending", 0) + status_counts.get("running", 0)
+    completed_schedules = status_counts.get("completed", 0)
+    failed_schedules = status_counts.get("failed", 0)
+
+    # Prepare status_distribution for chart
+    status_distribution = {
+        "pending": status_counts.get("pending", 0),
+        "running": status_counts.get("running", 0),
+        "completed": status_counts.get("completed", 0),
+        "failed": status_counts.get("failed", 0),
+    }
+
+    # Prepare strategies_distribution for chart
+    strategies_distribution = strategy_counts
+
+    # Return stats and paginated schedules
+    return {
+        "total_schedules": total_schedules,
+        "active_schedules": active_schedules,
+        "completed_schedules": completed_schedules,
+        "failed_schedules": failed_schedules,
+        "status_distribution": status_distribution,
+        "strategies_distribution": strategies_distribution,
+        "page": page,
+        "page_size": page_size,
+        "total_filtered": total_filtered,
+        "schedules": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "strategy": s.strategy,
+                "status": s.status,
+                "created_at": s.created_at.isoformat(),
+                "started_at": s.started_at.isoformat() if s.started_at else None,
+                "completed_at": s.completed_at.isoformat() if s.completed_at else None,
+                "error_message": s.error_message,
+                "config": {},
+                "updated_at": s.created_at.isoformat(),
+                "num_lots": 0,
+            }
+            for s in schedules_page
+        ],
+    }
 
 
 @router.delete("/schedule/{schedule_id}", response_model=MessageResponse)
