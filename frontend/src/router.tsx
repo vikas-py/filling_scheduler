@@ -7,6 +7,7 @@ import { Dashboard } from '@/pages/Dashboard'
 import { ScheduleCreate } from '@/pages/ScheduleCreate'
 import { ScheduleDetail } from '@/pages/ScheduleDetail'
 import { Compare } from '@/pages/Compare'
+import { Config } from '@/pages/Config'
 import { ROUTES } from '@/utils/constants'
 
 export const router = createBrowserRouter([
@@ -56,7 +57,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.CONFIG,
-        element: <div>Configuration Page (Coming Soon)</div>,
+        element: <Config />,
       },
       {
         path: ROUTES.PROFILE,
