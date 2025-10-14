@@ -174,7 +174,8 @@ Edit `frontend/.env.development`:
 
 ```bash
 # Change from localhost to your IP address
-VITE_API_URL=http://192.168.1.100:8000
+# IMPORTANT: Must include /api/v1 prefix
+VITE_API_URL=http://192.168.1.100:8000/api/v1
 VITE_WS_URL=ws://192.168.1.100:8000
 ```
 
@@ -303,7 +304,8 @@ npm run dev -- --host 0.0.0.0
 ```bash
 # Edit frontend/.env.development
 # Change localhost to VM's IP:
-VITE_API_URL=http://192.168.1.100:8000
+# IMPORTANT: Must include /api/v1 prefix
+VITE_API_URL=http://192.168.1.100:8000/api/v1
 VITE_WS_URL=ws://192.168.1.100:8000
 
 # Disable WebSocket if backend doesn't support it yet (default: false)
@@ -555,12 +557,13 @@ If accessing frontend from **Windows host** (and backend is on Ubuntu VM):
 
 Edit `frontend/.env.development`:
 ```bash
-# Change from localhost to VM's actual IP (NO /api/v1 here!)
-VITE_API_URL=http://192.168.56.101:8000  # Use your VM's IP
+# Change from localhost to VM's actual IP
+# IMPORTANT: Must include /api/v1 prefix as backend routes are under /api/v1/*
+VITE_API_URL=http://192.168.56.101:8000/api/v1  # Use your VM's IP + /api/v1
 VITE_WS_URL=ws://192.168.56.101:8000
 ```
 
-**Note:** Don't add `/api/v1` to VITE_API_URL - that goes in the constants.ts file!
+**Note:** The `/api/v1` prefix is required because all backend API routes are under `/api/v1/*`
 
 **Important:** After changing `.env.development`, you MUST restart the frontend:
 ```bash
@@ -617,7 +620,7 @@ npm run dev -- --host 0.0.0.0
 
 **frontend/.env.development:**
 ```bash
-VITE_API_URL=http://192.168.1.100:8000
+VITE_API_URL=http://192.168.1.100:8000/api/v1
 VITE_WS_URL=ws://192.168.1.100:8000
 ```
 
