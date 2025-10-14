@@ -11,9 +11,21 @@ Provides REST API for:
 - Getting available strategies
 """
 
+import csv
+import io
+import json as json_module
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -172,6 +184,111 @@ async def _run_schedule_background(
 
 
 @router.post("/schedule", response_model=ScheduleResponse, status_code=202)
+async def create_schedule_from_file(
+    name: str = Form(...),
+    strategy: str = Form(...),
+    config: str = Form(...),
+    csv_file: UploadFile = File(...),
+    description: str | None = Form(None),
+    background_tasks: BackgroundTasks = Depends(),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+) -> ScheduleResponse:
+    """
+    Create a new schedule from CSV file upload.
+
+    Accepts a CSV file with lots data and configuration.
+    Returns immediately with schedule ID and status.
+
+    - **name**: Schedule name
+    - **strategy**: Strategy name (LPT, SPT, CFS, SMART, HYBRID, MILP)
+    - **config**: JSON string with configuration parameters
+    - **csv_file**: CSV file with columns: Lot ID, Type, Vials
+    - **description**: Optional description
+
+    Returns 202 Accepted with schedule ID. Check status with GET /schedule/{id}.
+    """
+    # Validate file type
+    if not csv_file.filename or not csv_file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=400, detail="Invalid file type. Only CSV files are allowed."
+        )
+
+    # Read and parse CSV file
+    try:
+        content = await csv_file.read()
+        csv_text = content.decode("utf-8")
+        csv_reader = csv.DictReader(io.StringIO(csv_text))
+
+        # Convert CSV rows to lots_data format
+        lots_data = []
+        for row in csv_reader:
+            # Map CSV columns to expected format
+            # CSV has: "Lot ID", "Type", "Vials"
+            lot = {
+                "lot_id": row.get("Lot ID", "").strip(),
+                "lot_type": row.get("Type", "").strip(),
+                "vials": int(row.get("Vials", 0)),
+            }
+            lots_data.append(lot)
+
+        if not lots_data:
+            raise HTTPException(status_code=400, detail="CSV file is empty or has no valid data")
+
+    except UnicodeDecodeError as e:
+        raise HTTPException(
+            status_code=400, detail="Unable to decode CSV file. Please ensure it's UTF-8 encoded."
+        ) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid data in CSV file: {str(e)}") from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error parsing CSV file: {str(e)}") from e
+
+    # Parse config JSON
+    try:
+        config_dict = json_module.loads(config) if config else {}
+    except json_module.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid config JSON: {str(e)}") from e
+
+    # Validate lots data
+    validation = await validate_lots_data(lots_data)
+    if not validation["valid"]:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Invalid lots data",
+                "errors": validation["errors"],
+                "warnings": validation["warnings"],
+            },
+        )
+
+    # Create schedule record
+    schedule = Schedule(
+        user_id=current_user.id,
+        name=name,
+        description=description,
+        strategy=strategy,
+        status="pending",
+        config_json=json_module.dumps(config_dict),
+    )
+    db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+
+    # Start background task with proper arguments
+    background_tasks.add_task(
+        _run_schedule_background,
+        schedule.id,
+        lots_data,
+        datetime.utcnow(),  # start_time
+        strategy,
+        config_dict,  # config_data
+    )
+
+    return schedule
+
+
+@router.post("/schedule/json", response_model=ScheduleResponse, status_code=202)
 async def create_schedule(
     request: ScheduleRequest,
     background_tasks: BackgroundTasks,
@@ -179,10 +296,10 @@ async def create_schedule(
     db: Session = Depends(get_db),
 ):
     """
-    Create a new schedule.
+    Create a new schedule with JSON lots data.
 
-    Accepts lots data and configuration, starts scheduling in background.
-    Returns immediately with schedule ID and status.
+    Alternative endpoint that accepts lots data as JSON instead of CSV file.
+    Useful for programmatic access or when lots data is already structured.
 
     - **name**: Optional schedule name
     - **lots_data**: List of lot dictionaries (lot_id, lot_type, vials, fill_hours)
@@ -191,6 +308,8 @@ async def create_schedule(
     - **start_time**: Schedule start time (default: now)
 
     Returns 202 Accepted with schedule ID. Check status with GET /schedule/{id}.
+
+    NOTE: For CSV file uploads, use POST /schedule instead.
     """
     # Validate lots data
     validation = await validate_lots_data(request.lots_data)

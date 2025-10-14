@@ -101,7 +101,7 @@ async def shutdown_event():
 
 # FIX Bug #7: Rollback database transaction on HTTPException
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """
     Handle HTTP exceptions with automatic database rollback.
 
@@ -124,7 +124,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch all exceptions and return detailed error."""
     # Also rollback on unexpected exceptions
     if hasattr(request.state, "db"):
@@ -143,11 +143,30 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle validation errors with detailed messages."""
     print(f"❌ Validation error in {request.method} {request.url}:")
-    print(f"   {exc}")
-    return JSONResponse(status_code=422, content={"detail": exc.errors(), "body": exc.body})
+    print(f"   {exc.errors()}")
+
+    # Convert body to string if it's bytes (e.g., multipart form data)
+    body_content = exc.body
+    if isinstance(body_content, bytes):
+        try:
+            body_content = body_content.decode("utf-8")
+            # Truncate if too long (multipart form data can be huge)
+            if len(body_content) > 500:
+                body_content = body_content[:500] + "... (truncated)"
+        except UnicodeDecodeError:
+            body_content = "<binary data>"
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "body": body_content,
+            "message": "Validation error. Check the 'detail' field for specific errors.",
+        },
+    )
 
 
 @app.get("/")
