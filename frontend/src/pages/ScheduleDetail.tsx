@@ -12,6 +12,9 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogContent,
+  DialogTitle,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -19,9 +22,10 @@ import {
   Delete,
   Refresh,
 } from '@mui/icons-material';
+import html2canvas from 'html2canvas';
 import { getSchedule, deleteSchedule } from '../api/schedules';
 import type { Schedule } from '../api/schedules';
-import { GanttChart } from '../components/visualization/GanttChart';
+import { TimelineGanttChart } from '../components/visualization/TimelineGanttChart';
 import { ActivityList } from '../components/visualization/ActivityList';
 import { ScheduleStats } from '../components/visualization/ScheduleStats';
 
@@ -61,6 +65,7 @@ export const ScheduleDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [exportingPNG, setExportingPNG] = useState(false);
 
   const loadSchedule = async () => {
     if (!id) return;
@@ -99,14 +104,17 @@ export const ScheduleDetail = () => {
     }
   };
 
-  const handleExport = (format: 'csv' | 'json' | 'png') => {
+  const handleExport = async (format: 'csv' | 'json' | 'png') => {
     if (!schedule) return;
+
     if (format === 'csv') {
       // Convert activities to CSV
       const activities = schedule.activities || [];
       const csvRows = [
-        'Activity ID,Lot ID,Filler ID,Start Time,End Time,Duration,Num Units',
-        ...activities.map((lot: any) => `${lot.id},${lot.lot_id},${lot.filler_id},${lot.start_time},${lot.end_time},${lot.duration},${lot.num_units ?? ''}`)
+        'Activity ID,Lot ID,Filler ID,Start Time,End Time,Duration,Kind,Lot Type,Num Units',
+        ...activities.map((activity: Activity) =>
+          `${activity.id},${activity.lot_id},${activity.filler_id},${activity.start_time},${activity.end_time},${activity.duration},${activity.kind || ''},${activity.lot_type || ''},${activity.num_units ?? ''}`
+        )
       ];
       const csvContent = csvRows.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -126,16 +134,39 @@ export const ScheduleDetail = () => {
       a.click();
       URL.revokeObjectURL(url);
     } else if (format === 'png') {
-      // Export Gantt chart as PNG
-      const chart = document.querySelector('canvas');
-      if (chart && (chart as HTMLCanvasElement).toDataURL) {
-        const url = (chart as HTMLCanvasElement).toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${schedule.name || 'schedule'}_chart.png`;
-        a.click();
-      } else {
-        alert('Chart export not supported in this browser.');
+      // Export Gantt chart as PNG using html2canvas
+      setExportingPNG(true);
+      try {
+        // Find the SVG element (Gantt chart)
+        const chartElement = document.querySelector('svg');
+        if (!chartElement) {
+          alert('Chart not found. Please make sure the Gantt Chart tab is visible.');
+          return;
+        }
+
+        // Use html2canvas to capture the chart
+        const canvas = await html2canvas(chartElement.parentElement as HTMLElement, {
+          backgroundColor: '#ffffff',
+          scale: 2, // Higher resolution
+          logging: false,
+        });
+
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${schedule.name || 'schedule'}_chart.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/png');
+      } catch (error) {
+        console.error('Failed to export PNG:', error);
+        alert('Failed to export chart. Please try again.');
+      } finally {
+        setExportingPNG(false);
       }
     }
   };
@@ -270,9 +301,10 @@ export const ScheduleDetail = () => {
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ p: 2 }}>
             {schedule.activities && schedule.activities.length > 0 ? (
-              <GanttChart
+              <TimelineGanttChart
                 activities={schedule.activities}
                 numFillers={(schedule.config.num_fillers as number) || 4}
+                makespan={schedule.makespan || 0}
               />
             ) : (
               <Typography variant="body1" color="text.secondary">
@@ -321,6 +353,19 @@ export const ScheduleDetail = () => {
           </Box>
         </TabPanel>
       </Paper>
+
+      {/* PNG Export Loading Dialog */}
+      <Dialog open={exportingPNG}>
+        <DialogTitle>Exporting Chart</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+            <CircularProgress />
+            <Typography>
+              Generating high-resolution PNG image...
+            </Typography>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

@@ -29,6 +29,8 @@ export interface Activity {
   end_time: number;
   duration: number;
   num_units?: number;
+  kind?: string; // 'FILL', 'CLEAN', 'CHANGEOVER'
+  lot_type?: string;
 }
 
 export interface Schedule {
@@ -44,6 +46,9 @@ export interface Schedule {
   total_time?: number;
   result_file?: string;
   activities?: Activity[];
+  makespan?: number;
+  utilization?: number;
+  changeovers?: number;
 }
 
 export interface ScheduleCreateRequest {
