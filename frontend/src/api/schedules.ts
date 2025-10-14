@@ -179,11 +179,13 @@ export const getSchedule = async (id: number): Promise<Schedule> => {
     return {
       id: `activity-${index}`,
       lot_id: act.lot_id || act.kind, // Use activity kind if no lot_id (for CLEAN, CHANGEOVER)
-      filler_id: 0, // Backend doesn't track filler_id in single-filler schedules
+      filler_id: 1, // Default to filler 1 for single-filler schedules (chart expects 1-based indexing)
       start_time: startTimeHours,
       end_time: endTimeHours,
       duration: act.duration_hours,
       num_units: undefined,
+      kind: act.kind, // Add activity type (FILL, CLEAN, CHANGEOVER)
+      lot_type: act.lot_type || undefined, // Add lot type if available (convert null to undefined)
     };
   }) || [];
 
@@ -201,6 +203,9 @@ export const getSchedule = async (id: number): Promise<Schedule> => {
     updated_at: backendData.completed_at || backendData.started_at || backendData.created_at,
     num_lots: backendData.result?.lots_scheduled || 0,
     total_time: backendData.result?.makespan,
+    makespan: backendData.result?.makespan, // Add makespan for Gantt chart
+    utilization: backendData.result?.utilization, // Add utilization
+    changeovers: backendData.result?.changeovers, // Add changeovers
     activities,
   };
 
