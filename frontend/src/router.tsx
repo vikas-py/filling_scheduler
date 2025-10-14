@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { Dashboard } from '@/pages/Dashboard'
+import { ScheduleCreate } from '@/pages/ScheduleCreate'
 import { ROUTES } from '@/utils/constants'
 
 export const router = createBrowserRouter([
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
       },
       {
         path: ROUTES.SCHEDULE_NEW,
-        element: <div>New Schedule Page (Coming Soon)</div>,
+        element: <ScheduleCreate />,
       },
       {
         path: ROUTES.COMPARE,
