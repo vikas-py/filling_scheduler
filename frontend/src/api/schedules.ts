@@ -68,6 +68,10 @@ export interface ScheduleStats {
   failed_schedules: number;
   strategies_distribution?: Record<string, number>;
   status_distribution?: Record<string, number>;
+  page: number;
+  page_size: number;
+  total_filtered: number;
+  schedules: Schedule[];
 }
 
 // Create a new schedule
@@ -134,8 +138,20 @@ export const deleteSchedule = async (id: number): Promise<void> => {
 };
 
 // Get dashboard statistics
-export const getScheduleStats = async (): Promise<ScheduleStats> => {
-  const response = await api.get<ScheduleStats>('/schedules/stats');
+export const getScheduleStats = async (params?: {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  strategy?: string;
+  search?: string;
+}): Promise<ScheduleStats> => {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.append('page', params.page.toString());
+  if (params?.page_size) searchParams.append('page_size', params.page_size.toString());
+  if (params?.status) searchParams.append('status', params.status);
+  if (params?.strategy) searchParams.append('strategy', params.strategy);
+  if (params?.search) searchParams.append('search', params.search);
+  const response = await api.get<ScheduleStats>(`/schedules/stats?${searchParams.toString()}`);
   return response.data;
 };
 

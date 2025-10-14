@@ -15,62 +15,7 @@ import {
 } from '@mui/material';
 import { Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { useState } from 'react';
 import type { Schedule } from '@/api/schedules';
-
-// Mock data for development (matches API format)
-const mockSchedules: Schedule[] = [
-  {
-    id: 1,
-    name: 'Production Run Q4 2025',
-    status: 'completed',
-    strategy: 'LPT',
-    config: {},
-    created_at: '2025-10-13T10:30:00',
-    updated_at: '2025-10-13T14:30:00',
-    num_lots: 45,
-  },
-  {
-    id: 2,
-    name: 'Emergency Order Batch',
-    status: 'running',
-    strategy: 'SPT',
-    config: {},
-    created_at: '2025-10-14T08:15:00',
-    updated_at: '2025-10-14T08:15:00',
-    num_lots: 23,
-  },
-  {
-    id: 3,
-    name: 'Standard Production',
-    status: 'pending',
-    strategy: 'CFS',
-    config: {},
-    created_at: '2025-10-14T09:00:00',
-    updated_at: '2025-10-14T09:00:00',
-    num_lots: 67,
-  },
-  {
-    id: 4,
-    name: 'Optimization Test',
-    status: 'failed',
-    strategy: 'MILP',
-    config: {},
-    created_at: '2025-10-12T14:20:00',
-    updated_at: '2025-10-12T14:25:00',
-    num_lots: 12,
-  },
-  {
-    id: 5,
-    name: 'Weekly Production Schedule',
-    status: 'completed',
-    strategy: 'Hybrid',
-    config: {},
-    created_at: '2025-10-11T11:45:00',
-    updated_at: '2025-10-11T15:30:00',
-    num_lots: 89,
-  },
-];
 
 const getStatusColor = (status: Schedule['status']) => {
   switch (status) {
@@ -91,17 +36,22 @@ interface RecentSchedulesTableProps {
   schedules?: Schedule[];
   onView?: (id: number) => void;
   onDelete?: (id: number) => void;
-  rowsPerPage?: number;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export const RecentSchedulesTable = ({
-  schedules = mockSchedules,
+  schedules = [],
   onView,
   onDelete,
-  rowsPerPage = 5,
+  page = 1,
+  pageSize = 5,
+  total = 0,
+  onPageChange,
 }: RecentSchedulesTableProps) => {
-  const [page, setPage] = useState(1);
-
   const handleView = (id: number) => {
     if (onView) {
       onView(id);
@@ -119,8 +69,17 @@ export const RecentSchedulesTable = ({
   };
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+    if (onPageChange) {
+      onPageChange(value);
+    }
   };
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  // Schedules are already paginated from backend, so just use as-is
+  const paginatedSchedules = schedules;
 
   if (!schedules || schedules.length === 0) {
     return (
@@ -131,12 +90,6 @@ export const RecentSchedulesTable = ({
       </Paper>
     );
   }
-
-  // Pagination calculations
-  const totalPages = Math.ceil(schedules.length / rowsPerPage);
-  const startIndex = (page - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedSchedules = schedules.slice(startIndex, endIndex);
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
@@ -209,7 +162,7 @@ export const RecentSchedulesTable = ({
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
           <Typography variant="body2" color="text.secondary">
-            Showing {startIndex + 1}-{Math.min(endIndex, schedules.length)} of {schedules.length} schedules
+            Showing {startIndex + 1}-{Math.min(endIndex, total)} of {total} schedules
           </Typography>
           <Pagination
             count={totalPages}

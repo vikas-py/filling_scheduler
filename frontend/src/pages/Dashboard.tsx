@@ -22,7 +22,7 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ScheduleFiltersBar } from '@/components/dashboard/ScheduleFiltersBar';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import type { ScheduleFilters } from '@/components/dashboard/ScheduleFiltersBar';
-import { getSchedules, deleteSchedule, getScheduleStats } from '@/api/schedules';
+import { deleteSchedule, getScheduleStats } from '@/api/schedules';
 import type { Schedule } from '@/api/schedules';
 
 export const Dashboard = () => {
@@ -47,7 +47,12 @@ export const Dashboard = () => {
       active_schedules: 0,
       completed_schedules: 0,
       failed_schedules: 0,
+      page: 1,
+      page_size: 10,
+      total_filtered: 0,
     });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -65,17 +70,15 @@ export const Dashboard = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [response, stats] = await Promise.all([
-          getSchedules(1, 10, {
-            status: filters.status !== 'all' ? filters.status : undefined,
-            strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
-            search: filters.search || undefined,
-          }),
-          getScheduleStats(),
-        ]);
-        setSchedules(response.schedules);
+        const stats = await getScheduleStats({
+          page,
+          page_size: pageSize,
+          status: filters.status !== 'all' ? filters.status : undefined,
+          strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
+          search: filters.search || undefined,
+        });
+        setSchedules(stats.schedules);
         setKpiStats(stats);
-        // Prepare chart data from stats
         setChartData({
           strategies: Object.entries(stats.strategies_distribution || {}).map(([name, schedules]) => ({ name, schedules })),
           status: Object.entries(stats.status_distribution || {}).map(([name, value], i) => ({ name, value, color: ['#4caf50','#2196f3','#ff9800','#f44336'][i % 4] })),
@@ -87,7 +90,7 @@ export const Dashboard = () => {
       }
     };
     fetchDashboardData();
-  }, [filters]);
+  }, [filters, page, pageSize]);
 
   const handleViewSchedule = (id: number) => {
     navigate(`/schedules/${id}`);
@@ -100,7 +103,6 @@ export const Dashboard = () => {
 
   const handleDeleteConfirm = async () => {
     if (scheduleToDelete === null) return;
-
     try {
       await deleteSchedule(scheduleToDelete);
       setSnackbar({
@@ -108,13 +110,16 @@ export const Dashboard = () => {
         message: 'Schedule deleted successfully',
         severity: 'success',
       });
-      // Refetch schedules
-      const response = await getSchedules(1, 10, {
+      // Refetch dashboard data
+      const stats = await getScheduleStats({
+        page,
+        page_size: pageSize,
         status: filters.status !== 'all' ? filters.status : undefined,
         strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
         search: filters.search || undefined,
       });
-      setSchedules(response.schedules);
+      setSchedules(stats.schedules);
+      setKpiStats(stats);
     } catch (error) {
       console.error('Failed to delete schedule:', error);
       setSnackbar({
@@ -154,14 +159,14 @@ export const Dashboard = () => {
       <QuickActions />
 
       {/* KPI Cards */}
-        <DashboardKpiCards
-          data={[
-            { label: 'Total Schedules', value: kpiStats.total_schedules, color: '#1976d2' },
-            { label: 'Active', value: kpiStats.active_schedules, color: '#388e3c' },
-            { label: 'Completed', value: kpiStats.completed_schedules, color: '#0288d1' },
-            { label: 'Failed', value: kpiStats.failed_schedules, color: '#d32f2f' },
-          ]}
-        />
+      <DashboardKpiCards
+        data={[
+          { label: 'Total Schedules', value: kpiStats.total_schedules, color: '#1976d2' },
+          { label: 'Active', value: kpiStats.active_schedules, color: '#388e3c' },
+          { label: 'Completed', value: kpiStats.completed_schedules, color: '#0288d1' },
+          { label: 'Failed', value: kpiStats.failed_schedules, color: '#d32f2f' },
+        ]}
+      />
 
       {/* Filters */}
       <Box sx={{ mt: 4 }}>
@@ -179,6 +184,11 @@ export const Dashboard = () => {
             schedules={schedules}
             onView={handleViewSchedule}
             onDelete={handleDeleteSchedule}
+            page={page}
+            pageSize={pageSize}
+            total={kpiStats.total_filtered}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
         )}
       </Box>
