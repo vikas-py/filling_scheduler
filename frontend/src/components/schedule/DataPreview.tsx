@@ -49,12 +49,17 @@ export const DataPreview = ({ file, onDataParsed }: DataPreviewProps) => {
         const rows = results.data as Record<string, unknown>[];
         const errors: string[] = [];
 
-        // Validate required columns
-        const requiredColumns = ['lot_id', 'num_units', 'fill_time'];
+        // Validate required columns (backend expects: "Lot ID", "Type", "Vials")
+        const requiredColumns = ['Lot ID', 'Type', 'Vials'];
         const missingColumns = requiredColumns.filter((col) => !headers.includes(col));
 
         if (missingColumns.length > 0) {
           errors.push(`Missing required columns: ${missingColumns.join(', ')}`);
+        }
+
+        // Additional validation: check for data in rows
+        if (rows.length === 0) {
+          errors.push('CSV file is empty or has no data rows');
         }
 
         // Count total rows (estimate from file size)
@@ -88,7 +93,15 @@ export const DataPreview = ({ file, onDataParsed }: DataPreviewProps) => {
   if (!file) {
     return (
       <Alert severity="info">
-        Upload a CSV file to preview the data.
+        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+          Upload a CSV file to preview the data
+        </Typography>
+        <Typography variant="body2">
+          Required columns: <strong>Lot ID</strong>, <strong>Type</strong>, <strong>Vials</strong>
+        </Typography>
+        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+          Example: See <code>examples/lots.csv</code> in the repository
+        </Typography>
       </Alert>
     );
   }

@@ -90,6 +90,9 @@ export const CsvUpload = ({ onFileUpload, onFileRemove, uploadedFile, error }: C
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
             Maximum file size: 10MB
           </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Required columns: <strong>Lot ID</strong>, <strong>Type</strong>, <strong>Vials</strong>
+          </Typography>
         </Paper>
       ) : (
         <Paper sx={{ p: 3, border: '1px solid', borderColor: 'success.main' }}>
