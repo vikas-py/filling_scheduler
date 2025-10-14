@@ -14,31 +14,31 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:80
 export const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
 
 export const API_ENDPOINTS = {
-  // Auth
-  LOGIN: '/api/v1/auth/login',
-  REGISTER: '/api/v1/auth/register',
-  ME: '/api/v1/auth/me',
+  // Auth (Note: /api/v1 is in API_BASE_URL, so these are relative paths)
+  LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
+  ME: '/auth/me',
 
   // Schedules
-  SCHEDULES: '/api/v1/schedules', // List schedules (GET)
-  SCHEDULE_CREATE: '/api/v1/schedule', // Create schedule (POST) - singular
-  SCHEDULE_BY_ID: (id: number) => `/api/v1/schedule/${id}`, // Get/Delete schedule - singular
-  SCHEDULE_EXPORT: (id: number, format: string) => `/api/v1/schedule/${id}/export/${format}`,
-  SCHEDULE_VALIDATE: '/api/v1/schedule/validate',
-  STRATEGIES: '/api/v1/strategies', // Get strategies list
+  SCHEDULES: '/schedules', // List schedules (GET)
+  SCHEDULE_CREATE: '/schedule', // Create schedule (POST) - singular
+  SCHEDULE_BY_ID: (id: number) => `/schedule/${id}`, // Get/Delete schedule - singular
+  SCHEDULE_EXPORT: (id: number, format: string) => `/schedule/${id}/export/${format}`,
+  SCHEDULE_VALIDATE: '/schedule/validate',
+  STRATEGIES: '/strategies', // Get strategies list
 
   // Comparisons
-  COMPARISONS: '/api/v1/comparisons',
-  COMPARISON_BY_ID: (id: number) => `/api/v1/comparisons/${id}`,
-  COMPARE: '/api/v1/compare',
+  COMPARISONS: '/comparisons',
+  COMPARISON_BY_ID: (id: number) => `/comparisons/${id}`,
+  COMPARE: '/compare',
 
   // Config Templates
-  CONFIGS: '/api/v1/config',
-  CONFIG_BY_ID: (id: number) => `/api/v1/config/${id}`,
-  CONFIG_DEFAULT: '/api/v1/config/default',
-  CONFIG_SET_DEFAULT: (id: number) => `/api/v1/config/${id}/set-default`,
-  CONFIG_VALIDATE: '/api/v1/config/validate',
-  CONFIG_SYSTEM_DEFAULT: '/api/v1/config/system-default',
+  CONFIGS: '/config',
+  CONFIG_BY_ID: (id: number) => `/config/${id}`,
+  CONFIG_DEFAULT: '/config/default',
+  CONFIG_SET_DEFAULT: (id: number) => `/config/${id}/set-default`,
+  CONFIG_VALIDATE: '/config/validate',
+  CONFIG_SYSTEM_DEFAULT: '/config/system-default',
 
   // Health
   ROOT: '/',

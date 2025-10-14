@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { StrategyType } from '../components/schedule/StrategySelector';
 
+// VITE_API_URL should include /api/v1 prefix (e.g., http://localhost:8000/api/v1)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
