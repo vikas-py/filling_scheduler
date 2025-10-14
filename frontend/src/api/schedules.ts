@@ -124,11 +124,82 @@ export const getSchedules = async (
   return response.data;
 };
 
+// Backend activity structure from schedule results
+interface BackendActivity {
+  start: string;
+  end: string;
+  kind: 'FILL' | 'CLEAN' | 'CHANGEOVER';
+  lot_id: string | null;
+  lot_type: string | null;
+  note: string;
+  duration_hours: number;
+}
+
+// Backend response structure for schedule detail
+interface BackendScheduleDetail {
+  id: number;
+  name: string;
+  strategy: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  result: {
+    makespan: number;
+    utilization: number;
+    changeovers: number;
+    lots_scheduled: number;
+    window_violations: number;
+    kpis_json: Record<string, unknown>;
+    activities_json: BackendActivity[];
+  } | null;
+}
+
 // Get a single schedule by ID
 export const getSchedule = async (id: number): Promise<Schedule> => {
   // Backend uses /schedule/{id} (singular)
-  const response = await api.get<Schedule>(`/schedule/${id}`);
-  return response.data;
+  const response = await api.get<BackendScheduleDetail>(`/schedule/${id}`);
+  const backendData = response.data;
+
+  // Transform backend activities to frontend format
+  const activities: Activity[] = backendData.result?.activities_json.map((act, index) => {
+    // Calculate hours from start of schedule
+    const scheduleStart = new Date(backendData.started_at || backendData.created_at).getTime();
+    const actStart = new Date(act.start).getTime();
+    const actEnd = new Date(act.end).getTime();
+    const startTimeHours = (actStart - scheduleStart) / (1000 * 60 * 60);
+    const endTimeHours = (actEnd - scheduleStart) / (1000 * 60 * 60);
+
+    return {
+      id: `activity-${index}`,
+      lot_id: act.lot_id || act.kind, // Use activity kind if no lot_id (for CLEAN, CHANGEOVER)
+      filler_id: 0, // Backend doesn't track filler_id in single-filler schedules
+      start_time: startTimeHours,
+      end_time: endTimeHours,
+      duration: act.duration_hours,
+      num_units: undefined,
+    };
+  }) || [];
+
+  // Transform backend response to frontend Schedule format
+  const schedule: Schedule = {
+    id: backendData.id,
+    name: backendData.name,
+    description: '', // Backend doesn't provide this
+    status: backendData.status,
+    strategy: backendData.strategy,
+    config: {
+      num_fillers: 1, // Backend doesn't provide this; default to 1 for single-filler schedules
+    },
+    created_at: backendData.created_at,
+    updated_at: backendData.completed_at || backendData.started_at || backendData.created_at,
+    num_lots: backendData.result?.lots_scheduled || 0,
+    total_time: backendData.result?.makespan,
+    activities,
+  };
+
+  return schedule;
 };
 
 // Delete a schedule
