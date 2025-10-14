@@ -33,6 +33,9 @@ export const RealTimeProvider = ({ children }: RealTimeProviderProps) => {
   );
   const [subscribedSchedules, setSubscribedSchedules] = useState<Set<string>>(new Set());
 
+  // Check if WebSocket is enabled via environment variable
+  const isWebSocketEnabled = import.meta.env.VITE_ENABLE_WEBSOCKET !== 'false';
+
   const handleMessage = (message: WebSocketMessage) => {
     console.log('WebSocket message received:', message);
 
@@ -66,7 +69,7 @@ export const RealTimeProvider = ({ children }: RealTimeProviderProps) => {
     reconnect,
     isConnected,
   } = useWebSocket({
-    autoConnect: true,
+    autoConnect: isWebSocketEnabled,
     onMessage: handleMessage,
     onConnect: () => {
       console.log('WebSocket connected, resubscribing to schedules...');

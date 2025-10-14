@@ -306,6 +306,9 @@ npm run dev -- --host 0.0.0.0
 VITE_API_URL=http://192.168.1.100:8000
 VITE_WS_URL=ws://192.168.1.100:8000
 
+# Disable WebSocket if backend doesn't support it yet (default: false)
+VITE_ENABLE_WEBSOCKET=false
+
 # Then restart frontend:
 npm run dev -- --host 0.0.0.0
 ```
@@ -396,9 +399,22 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 ### Frontend (frontend/.env.development)
 ```bash
+# API Configuration
 VITE_API_URL=http://localhost:8000
 VITE_WS_URL=ws://localhost:8000
+
+# WebSocket Real-time Features (set to false if backend doesn't support WebSocket yet)
+VITE_ENABLE_WEBSOCKET=false
+
+# Debug logging (optional)
+VITE_DEBUG=true
 ```
+
+**Important:** The `VITE_ENABLE_WEBSOCKET` flag controls whether the frontend attempts to connect to WebSocket.
+- Set to `false` (default) - No WebSocket connection, app works without real-time updates
+- Set to `true` - Enables real-time schedule updates (requires WebSocket backend support)
+
+If you see WebSocket connection errors in the browser console, ensure `VITE_ENABLE_WEBSOCKET=false` in your `.env.development` file.
 
 ---
 
@@ -628,6 +644,38 @@ If you've run the backend before, you may have a test user:
 - **Password:** test1234
 
 Otherwise, register a new account via the frontend.
+
+---
+
+## WebSocket Connection Errors in Browser Console
+
+**Symptom:** You see repeated errors like:
+```
+useWebSocket.ts:90 WebSocket connection to 'ws://192.168.56.101:8000/?token=...' failed
+useWebSocket.ts:110 WebSocket error: Event {...}
+useWebSocket.ts:123 Attempting to reconnect (1/5)...
+useWebSocket.ts:131 Max reconnection attempts reached
+```
+
+**Root Cause:** The backend doesn't have WebSocket endpoint implemented yet, but the frontend is trying to connect.
+
+**Solution:** Disable WebSocket in frontend configuration:
+
+1. **Edit `frontend/.env.development`:**
+   ```bash
+   # Add or update this line
+   VITE_ENABLE_WEBSOCKET=false
+   ```
+
+2. **Restart frontend:**
+   ```bash
+   # Press Ctrl+C to stop
+   npm run dev -- --host 0.0.0.0
+   ```
+
+3. **Verify:** The WebSocket errors should stop appearing in the browser console.
+
+**Note:** The application works perfectly fine without WebSocket. Real-time updates are optional features that require WebSocket backend support. When disabled, the app uses standard HTTP REST API calls.
 
 ---
 
