@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import html2canvas from 'html2canvas';
 import { getSchedule, deleteSchedule } from '../api/schedules';
-import type { Schedule } from '../api/schedules';
+import type { Schedule, Activity } from '../api/schedules';
 import { TimelineGanttChart } from '../components/visualization/TimelineGanttChart';
 import { ActivityList } from '../components/visualization/ActivityList';
 import { ScheduleStats } from '../components/visualization/ScheduleStats';
@@ -66,6 +66,7 @@ export const ScheduleDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [exportingPNG, setExportingPNG] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const loadSchedule = async () => {
     if (!id) return;
@@ -104,7 +105,7 @@ export const ScheduleDetail = () => {
     }
   };
 
-  const handleExport = async (format: 'csv' | 'json' | 'png') => {
+  const handleExport = async (format: 'csv' | 'json' | 'png' | 'pdf' | 'excel') => {
     if (!schedule) return;
 
     if (format === 'csv') {
@@ -167,6 +168,49 @@ export const ScheduleDetail = () => {
         alert('Failed to export chart. Please try again.');
       } finally {
         setExportingPNG(false);
+      }
+    } else if (format === 'pdf' || format === 'excel') {
+      // Export PDF or Excel report via backend API
+      setExportingPDF(true);
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/schedule/${schedule.id}/export?format=${format}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: 'Export failed' }));
+          throw new Error(errorData.detail || `Failed to generate ${format.toUpperCase()} report`);
+        }
+
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `schedule_${schedule.id}_report.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        // Download the file
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(`Failed to export ${format.toUpperCase()}:`, error);
+        alert(error instanceof Error ? error.message : `Failed to generate ${format.toUpperCase()} report. Please try again.`);
+      } finally {
+        setExportingPDF(false);
       }
     }
   };
@@ -265,27 +309,49 @@ export const ScheduleDetail = () => {
       </Paper>
 
       {/* Export buttons */}
-      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         <Button
           startIcon={<Download />}
           size="small"
+          variant="outlined"
           onClick={() => handleExport('csv')}
         >
-          Export CSV
+          CSV
         </Button>
         <Button
           startIcon={<Download />}
           size="small"
+          variant="outlined"
           onClick={() => handleExport('json')}
         >
-          Export JSON
+          JSON
         </Button>
         <Button
           startIcon={<Download />}
           size="small"
-          onClick={() => handleExport('png')}
+          variant="outlined"
+          onClick={() => handleExport('excel')}
+          disabled={exportingPDF}
         >
-          Export Chart
+          Excel
+        </Button>
+        <Button
+          startIcon={<Download />}
+          size="small"
+          variant="contained"
+          onClick={() => handleExport('pdf')}
+          disabled={exportingPDF}
+        >
+          PDF Report
+        </Button>
+        <Button
+          startIcon={<Download />}
+          size="small"
+          variant="outlined"
+          onClick={() => handleExport('png')}
+          disabled={exportingPNG}
+        >
+          Chart PNG
         </Button>
       </Box>
 
@@ -362,6 +428,23 @@ export const ScheduleDetail = () => {
             <CircularProgress />
             <Typography>
               Generating high-resolution PNG image...
+            </Typography>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF/Excel Export Loading Dialog */}
+      <Dialog open={exportingPDF}>
+        <DialogTitle>Generating Report</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+            <CircularProgress />
+            <Typography>
+              Generating report with charts and statistics...
+              <br />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                This may take a few seconds for large schedules.
+              </Typography>
             </Typography>
           </Box>
         </DialogContent>

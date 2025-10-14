@@ -324,7 +324,7 @@
     <div class="cover-page">
         <h1>Schedule Report</h1>
         <p class="subtitle">{{ schedule.name }}</p>
-        
+
         <div class="metadata">
             <p><strong>Strategy:</strong> {{ schedule.strategy }}</p>
             <p><strong>Status:</strong> <span class="status-badge status-{{ schedule.status }}">{{ schedule.status }}</span></p>
@@ -336,26 +336,26 @@
     <div class="container">
         <!-- Executive Summary -->
         <h1>Executive Summary</h1>
-        
+
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="label">Makespan</div>
                 <div class="value">{{ "%.1f"|format(results.makespan) }}</div>
                 <div class="unit">hours</div>
             </div>
-            
+
             <div class="metric-card">
                 <div class="label">Utilization</div>
                 <div class="value">{{ "%.1f"|format(results.utilization * 100) }}</div>
                 <div class="unit">%</div>
             </div>
-            
+
             <div class="metric-card">
                 <div class="label">Changeovers</div>
                 <div class="value">{{ results.changeovers }}</div>
                 <div class="unit">total</div>
             </div>
-            
+
             <div class="metric-card">
                 <div class="label">Lots Scheduled</div>
                 <div class="value">{{ results.lots_scheduled }}</div>
@@ -389,7 +389,7 @@
 
         <!-- Schedule Gantt Chart -->
         <h1>Schedule Timeline</h1>
-        
+
         {% if gantt_chart %}
         <div class="chart-container">
             <img src="data:image/png;base64,{{ gantt_chart }}" alt="Gantt Chart" />
@@ -404,7 +404,7 @@
 
         <!-- Resource Utilization -->
         <h1>Resource Utilization</h1>
-        
+
         {% if utilization_chart %}
         <div class="chart-container">
             <img src="data:image/png;base64,{{ utilization_chart }}" alt="Utilization Chart" />
@@ -413,7 +413,7 @@
 
         <!-- Activity Distribution -->
         <h2>Activity Distribution</h2>
-        
+
         {% if activity_distribution_chart %}
         <div class="chart-container">
             <img src="data:image/png;base64,{{ activity_distribution_chart }}" alt="Activity Distribution" style="max-width: 600px;" />
@@ -424,7 +424,7 @@
 
         <!-- Filler Breakdown -->
         <h1>Filler Breakdown</h1>
-        
+
         {% if filler_stats %}
         <table>
             <thead>
@@ -458,7 +458,7 @@
 
         <!-- Activity Details -->
         <h1>Activity Details</h1>
-        
+
         {% if activities %}
         <table>
             <thead>
@@ -503,7 +503,7 @@
 
         <!-- Configuration -->
         <h1>Configuration</h1>
-        
+
         <div class="config-grid">
             {% for key, value in config.items() %}
             <div class="config-item">
@@ -516,7 +516,7 @@
         <!-- Validation Results -->
         {% if validation %}
         <h2>Validation Results</h2>
-        
+
         {% if validation.errors %}
         <div class="error-box">
             <h3>Errors ({{ validation.errors|length }})</h3>
@@ -527,7 +527,7 @@
             </ul>
         </div>
         {% endif %}
-        
+
         {% if validation.warnings %}
         <div class="warning-box">
             <h3>Warnings ({{ validation.warnings|length }})</h3>
@@ -538,7 +538,7 @@
             </ul>
         </div>
         {% endif %}
-        
+
         {% if not validation.errors and not validation.warnings %}
         <div class="info-box">
             <strong>✓ No validation issues found</strong>

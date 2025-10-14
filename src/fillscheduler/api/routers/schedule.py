@@ -641,14 +641,16 @@ async def delete_schedule(
 @router.get("/schedule/{schedule_id}/export")
 async def export_schedule(
     schedule_id: int,
-    format: str = Query("json", regex="^(json|csv)$", description="Export format"),
+    format: str = Query("json", regex="^(json|csv|pdf|excel)$", description="Export format"),
+    include_charts: bool = Query(True, description="Include charts in PDF/Excel export"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """
-    Export schedule to JSON or CSV format.
+    Export schedule to JSON, CSV, PDF, or Excel format.
 
-    - **format**: Export format (json or csv)
+    - **format**: Export format (json, csv, pdf, or excel)
+    - **include_charts**: Whether to include chart visualizations (PDF/Excel only)
     """
     schedule = (
         db.query(Schedule)
@@ -732,6 +734,106 @@ async def export_schedule(
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=schedule_{schedule_id}.csv"},
         )
+
+    elif format == "pdf":
+        # Generate PDF report
+        try:
+            from fillscheduler.reporting import generate_pdf_report
+
+            # Prepare schedule data for PDF generation
+            schedule_data = {
+                "schedule": {
+                    "id": schedule.id,
+                    "name": schedule.name,
+                    "description": "",
+                    "status": schedule.status,
+                    "strategy": schedule.strategy,
+                    "config": (
+                        json_module.loads(schedule.config_json) if schedule.config_json else {}
+                    ),
+                },
+                "results": {
+                    "makespan": result.makespan,
+                    "utilization": result.utilization,
+                    "changeovers": result.changeovers,
+                    "lots_scheduled": result.lots_scheduled,
+                },
+                "activities": (
+                    json_module.loads(result.activities_json) if result.activities_json else []
+                ),
+                "config": json_module.loads(schedule.config_json) if schedule.config_json else {},
+            }
+
+            # Generate PDF
+            pdf_bytes = generate_pdf_report(
+                schedule_data=schedule_data,
+                user_name=current_user.username,
+                include_charts=include_charts,
+            )
+
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f"attachment; filename=schedule_{schedule.name or schedule_id}_report.pdf"
+                },
+            )
+
+        except ImportError as e:
+            raise HTTPException(
+                status_code=501,
+                detail="PDF generation not available. Install required dependencies: weasyprint, plotly, kaleido",
+            ) from e
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to generate PDF report: {str(e)}"
+            ) from e
+
+    elif format == "excel":
+        # Generate Excel report
+        try:
+            from fillscheduler.reporting import generate_excel_report
+
+            # Prepare schedule data for Excel generation
+            schedule_data = {
+                "schedule": {
+                    "id": schedule.id,
+                    "name": schedule.name,
+                    "status": schedule.status,
+                    "strategy": schedule.strategy,
+                },
+                "results": {
+                    "makespan": result.makespan,
+                    "utilization": result.utilization,
+                    "changeovers": result.changeovers,
+                    "lots_scheduled": result.lots_scheduled,
+                },
+                "activities": (
+                    json_module.loads(result.activities_json) if result.activities_json else []
+                ),
+                "config": json_module.loads(schedule.config_json) if schedule.config_json else {},
+            }
+
+            # Generate Excel
+            excel_bytes = generate_excel_report(schedule_data=schedule_data)
+
+            return Response(
+                content=excel_bytes,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f"attachment; filename=schedule_{schedule.name or schedule_id}_report.xlsx"
+                },
+            )
+
+        except ImportError as e:
+            raise HTTPException(
+                status_code=501,
+                detail="Excel generation not available. Install required dependencies: openpyxl",
+            ) from e
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to generate Excel report: {str(e)}"
+            ) from e
 
 
 @router.post("/schedule/validate", response_model=dict)

@@ -5,8 +5,11 @@
 [![Code Quality](https://img.shields.io/badge/code%20quality-pre--commit%20hooks-blue)](.pre-commit-config.yaml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Ubuntu%20%7C%20Windows%20%7C%20macOS-lightgrey)](docs/UBUNTU_DEPLOYMENT_GUIDE.md)
 
 A production-grade pharmaceutical filling line scheduler that optimizes lot sequencing under strict operational constraints. The system implements multiple scheduling strategies ranging from fast heuristics to exact optimization.
+
+**🚀 Now with Web UI, PDF Reports, and Interactive Gantt Charts!**
 
 ---
 
@@ -44,52 +47,72 @@ A production-grade pharmaceutical filling line scheduler that optimizes lot sequ
 - 💾 Export default configuration templates
 - 🔍 Configuration validation commands
 
+### Web Application
+- 🌐 Modern React + TypeScript frontend with Material-UI
+- 🔐 JWT authentication with role-based access control
+- 📊 Interactive dashboard with real-time statistics
+- 📈 Timeline Gantt chart with zoom/filter/highlight controls
+- 📄 Professional PDF reports with embedded charts
+- 📊 Excel export with multiple worksheets
+- 🖼️ High-resolution PNG chart export
+- 📱 Responsive design for mobile/tablet
+
 ### Rich Reporting
-- 📊 CSV schedule exports
+- 📊 CSV/JSON/Excel schedule exports
 - 🎨 Interactive HTML reports with color-coded activities
 - 📈 KPI tracking (makespan, utilization, changeover analysis)
 - 🔄 Multi-strategy comparison tools
+- 📄 **Professional PDF reports** with WeasyPrint and Plotly charts
+- 📊 **Excel workbooks** with Summary, Activities, and Configuration sheets
 
 ---
 
 ## 🚀 Quick Start
 
-### Installation
+### Ubuntu Server Deployment (Recommended for Production)
+
+**One-command installation** with Nginx, systemd service, and SSL support:
+
+```bash
+cd /opt
+sudo git clone https://github.com/vikas-py/filling_scheduler.git
+cd filling_scheduler
+sudo bash scripts/install_ubuntu.sh
+```
+
+**Access**: `http://your-server-ip`
+
+📚 **Full Guide**: [Ubuntu Deployment Guide](docs/UBUNTU_DEPLOYMENT_GUIDE.md) | [Quick Start](docs/UBUNTU_QUICK_START.md)
+
+---
+
+### Local Development Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/vikas-py/filling_scheduler.git
 cd filling_scheduler
 
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
+# Backend Setup
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Install the package (makes 'fillscheduler' command available)
-pip install -e .
+# Frontend Setup
+cd frontend
+npm install
+npm run dev
 
-# Optional: Install MILP optimization support
-pip install pulp>=2.7
-
-# Optional: Install development dependencies
-pip install -r requirements-dev.txt
-
-# Verify installation
-fillscheduler --version
-# Output: fillscheduler, version 0.2.0
+# Backend Server (separate terminal)
+cd ..
+uvicorn src.fillscheduler.api.main:app --reload
 ```
 
-### Command-Line Interface
+**Access**: `http://localhost:5173`
 
-The modern CLI provides a professional interface with progress indicators and formatted output:
+---
+
+### CLI Usage Examples
 
 ```bash
 # Generate a schedule (with beautiful progress indicators)

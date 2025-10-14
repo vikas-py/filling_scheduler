@@ -1,7 +1,7 @@
 # Reporting & Visualization Improvements
 
-**Date**: October 14, 2025  
-**Status**: Improvement Recommendations  
+**Date**: October 14, 2025
+**Status**: Improvement Recommendations
 **Priority**: High - User-facing features critical for production
 
 ## Executive Summary
@@ -143,8 +143,8 @@ const handleExportPNG = () => {
 
 ### 2.1 Enhanced HTML Report Generation
 
-**Priority**: High  
-**Effort**: Medium (2-3 days)  
+**Priority**: High
+**Effort**: Medium (2-3 days)
 **Impact**: High - Professional reports for stakeholders
 
 **Approach**:
@@ -192,8 +192,8 @@ Recommendations
 
 ### 2.2 True Timeline Gantt Chart
 
-**Priority**: Critical  
-**Effort**: High (4-5 days)  
+**Priority**: Critical
+**Effort**: High (4-5 days)
 **Impact**: Very High - Core visualization
 
 **Approach 1: Custom SVG Renderer** (Recommended)
@@ -204,7 +204,7 @@ Recommendations
     <g key={filler}>
       {/* Filler row */}
       <text y={idx * rowHeight}>{filler}</text>
-      
+
       {/* Activities for this filler */}
       {activities
         .filter(a => a.filler_id === filler)
@@ -221,7 +221,7 @@ Recommendations
       }
     </g>
   ))}
-  
+
   {/* Time axis */}
   <g transform={`translate(0, ${height - 30})`}>
     {timePoints.map(t => (
@@ -250,8 +250,8 @@ Recommendations
 
 ### 2.3 Resource Utilization Timeline
 
-**Priority**: High  
-**Effort**: Medium (2-3 days)  
+**Priority**: High
+**Effort**: Medium (2-3 days)
 **Impact**: High - Shows efficiency clearly
 
 **New Component**: `ResourceUtilizationChart.tsx`
@@ -261,23 +261,23 @@ Recommendations
 <AreaChart data={utilizationByHour}>
   <XAxis dataKey="hour" label="Time (hours)" />
   <YAxis label="Active Fillers" />
-  <Area 
-    type="monotone" 
-    dataKey="filling" 
-    stackId="1" 
-    fill="#1976d2" 
+  <Area
+    type="monotone"
+    dataKey="filling"
+    stackId="1"
+    fill="#1976d2"
   />
-  <Area 
-    type="monotone" 
-    dataKey="cleaning" 
-    stackId="1" 
-    fill="#ff9800" 
+  <Area
+    type="monotone"
+    dataKey="cleaning"
+    stackId="1"
+    fill="#ff9800"
   />
-  <Area 
-    type="monotone" 
-    dataKey="changeover" 
-    stackId="1" 
-    fill="#f44336" 
+  <Area
+    type="monotone"
+    dataKey="changeover"
+    stackId="1"
+    fill="#f44336"
   />
 </AreaChart>
 ```
@@ -291,8 +291,8 @@ Recommendations
 
 ### 2.4 PDF Export with Professional Formatting
 
-**Priority**: Critical  
-**Effort**: High (4-5 days)  
+**Priority**: Critical
+**Effort**: High (4-5 days)
 **Impact**: Very High - Most requested feature
 
 **Backend Implementation**:
@@ -315,19 +315,19 @@ async def export_schedule_enhanced(
     current_user: User = Depends(get_current_active_user)
 ):
     """Enhanced export with PDF and Excel support"""
-    
+
     if format == "pdf":
         # Load data
         schedule = get_schedule_with_results(db, schedule_id, current_user.id)
-        
+
         # Generate charts as base64 images
         gantt_img = generate_gantt_chart_image(schedule)
         utilization_img = generate_utilization_chart(schedule)
-        
+
         # Render HTML template
         env = Environment(loader=FileSystemLoader('templates'))
         template = env.get_template('schedule_report.html')
-        
+
         html_content = template.render(
             schedule=schedule,
             gantt_chart=gantt_img,
@@ -335,12 +335,12 @@ async def export_schedule_enhanced(
             generated_at=datetime.now(),
             user=current_user.username
         )
-        
+
         # Convert to PDF
         pdf_bytes = HTML(string=html_content).write_pdf(
             stylesheets=[CSS(string=REPORT_CSS)]
         )
-        
+
         return Response(
             content=pdf_bytes,
             media_type='application/pdf',
@@ -348,33 +348,33 @@ async def export_schedule_enhanced(
                 'Content-Disposition': f'attachment; filename="schedule_{schedule_id}_report.pdf"'
             }
         )
-    
+
     elif format == "excel":
         # Use openpyxl to create formatted Excel
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill, Alignment
         from openpyxl.chart import BarChart, Reference
-        
+
         wb = Workbook()
-        
+
         # Sheet 1: Summary
         ws_summary = wb.active
         ws_summary.title = "Summary"
         # ... format with colors, fonts, etc.
-        
+
         # Sheet 2: Activities
         ws_activities = wb.create_sheet("Activities")
         # ... detailed activity list
-        
+
         # Sheet 3: Charts
         ws_charts = wb.create_sheet("Charts")
         # ... embedded charts
-        
+
         # Save to BytesIO
         excel_bytes = io.BytesIO()
         wb.save(excel_bytes)
         excel_bytes.seek(0)
-        
+
         return Response(
             content=excel_bytes.read(),
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -396,8 +396,8 @@ async def export_schedule_enhanced(
 
 ### 2.5 Enhanced Activity List
 
-**Priority**: Medium  
-**Effort**: Low (1 day)  
+**Priority**: Medium
+**Effort**: Low (1 day)
 **Impact**: Medium
 
 **Current Issues**:
@@ -429,8 +429,8 @@ async def export_schedule_enhanced(
 
 ### 2.6 Comparison Report Generator
 
-**Priority**: High  
-**Effort**: High (4-5 days)  
+**Priority**: High
+**Effort**: High (4-5 days)
 **Impact**: High - Critical for strategy evaluation
 
 **New Endpoint**: `POST /api/v1/comparisons/{id}/report`
@@ -451,7 +451,7 @@ async def generate_comparison_report(
     - Recommendations
     """
     comparison = get_comparison_with_schedules(db, comparison_id, current_user.id)
-    
+
     if format == "pdf":
         # Generate multi-schedule comparison PDF
         return generate_comparison_pdf(comparison)
@@ -684,12 +684,12 @@ from plotly.io import to_image
 def generate_gantt_chart_image(schedule_data):
     """Generate Gantt chart as PNG for embedding in PDF"""
     fig = go.Figure()
-    
+
     # Add traces for each filler
     for filler_id in range(1, schedule_data['num_fillers'] + 1):
-        activities = [a for a in schedule_data['activities'] 
+        activities = [a for a in schedule_data['activities']
                      if a['filler_id'] == filler_id]
-        
+
         for activity in activities:
             fig.add_trace(go.Bar(
                 name=f"Filler {filler_id}",
@@ -703,7 +703,7 @@ def generate_gantt_chart_image(schedule_data):
                              f"End: {activity['end_time']}h<br>" +
                              f"Duration: {activity['duration']}h",
             ))
-    
+
     fig.update_layout(
         barmode='overlay',
         xaxis_title='Time (hours)',
@@ -712,7 +712,7 @@ def generate_gantt_chart_image(schedule_data):
         height=400,
         width=1000,
     )
-    
+
     # Export to PNG
     img_bytes = to_image(fig, format='png', width=1000, height=400, scale=2)
     return base64.b64encode(img_bytes).decode()
@@ -726,7 +726,7 @@ const TimelineGanttChart = ({ activities, numFillers, makespan }) => {
   const height = numFillers * 60 + 100;
   const leftMargin = 100;
   const timeScale = (time: number) => leftMargin + (time / makespan) * (width - leftMargin - 50);
-  
+
   return (
     <svg width={width} height={height}>
       {/* Y-axis labels */}
@@ -741,13 +741,13 @@ const TimelineGanttChart = ({ activities, numFillers, makespan }) => {
           Filler {i + 1}
         </text>
       ))}
-      
+
       {/* Activity bars */}
       {activities.map((activity, idx) => {
         const y = (activity.filler_id - 1) * 60 + 10;
         const x = timeScale(activity.start_time);
         const barWidth = timeScale(activity.end_time) - x;
-        
+
         return (
           <rect
             key={idx}
@@ -763,13 +763,13 @@ const TimelineGanttChart = ({ activities, numFillers, makespan }) => {
             style={{ cursor: 'pointer' }}
           >
             <title>
-              {activity.lot_id} | {activity.kind} | 
+              {activity.lot_id} | {activity.kind} |
               {activity.start_time}h - {activity.end_time}h
             </title>
           </rect>
         );
       })}
-      
+
       {/* X-axis */}
       <line
         x1={leftMargin}
@@ -779,7 +779,7 @@ const TimelineGanttChart = ({ activities, numFillers, makespan }) => {
         stroke="#333"
         strokeWidth={2}
       />
-      
+
       {/* Time markers */}
       {Array.from({ length: Math.ceil(makespan / 4) + 1 }, (_, i) => {
         const time = i * 4;
@@ -945,7 +945,7 @@ describe('TimelineGanttChart', () => {
     render(<TimelineGanttChart activities={activities} numFillers={3} />);
     expect(screen.getByText('Filler 1')).toBeInTheDocument();
   });
-  
+
   it('handles click events', () => {
     const onActivityClick = jest.fn();
     render(<TimelineGanttChart onActivityClick={onActivityClick} />);
@@ -984,11 +984,11 @@ def test_export_endpoint_excel(client, auth_headers):
 def test_large_schedule_pdf_generation():
     """Test PDF generation with 100+ lots"""
     schedule_data = generate_large_schedule(num_lots=150)
-    
+
     start = time.time()
     pdf_bytes = generate_pdf_report(schedule_data)
     duration = time.time() - start
-    
+
     assert duration < 10.0  # Should complete in under 10 seconds
     assert len(pdf_bytes) > 0
 ```
@@ -1002,7 +1002,7 @@ Use Playwright or Cypress for visual regression testing:
 test('Gantt chart renders correctly', async ({ page }) => {
   await page.goto('/schedules/1');
   await page.waitForSelector('svg');
-  
+
   const screenshot = await page.screenshot();
   expect(screenshot).toMatchSnapshot('gantt-chart.png');
 });
@@ -1261,7 +1261,7 @@ The current reporting and visualization capabilities are insufficient for produc
 - **Efficiency**: One-click export to any format
 - **Scalability**: Performance-optimized for large schedules
 
-**Total Effort**: 4 weeks with 1 developer  
+**Total Effort**: 4 weeks with 1 developer
 **Priority**: High - User-facing features critical for production adoption
 
 **Next Steps**:
@@ -1272,7 +1272,7 @@ The current reporting and visualization capabilities are insufficient for produc
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: October 14, 2025  
-**Author**: Development Team  
+**Document Version**: 1.0
+**Last Updated**: October 14, 2025
+**Author**: Development Team
 **Status**: Awaiting Approval

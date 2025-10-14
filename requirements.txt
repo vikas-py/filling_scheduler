@@ -27,3 +27,11 @@ aiofiles>=23.2.1  # Async file operations
 
 # Additional
 python-dotenv>=1.0.0  # Environment variables
+
+# PDF Generation & Reporting
+weasyprint>=60.1  # HTML to PDF conversion
+Jinja2>=3.1.2  # Template engine
+plotly>=5.17.0  # Chart generation
+kaleido==0.2.1  # Plotly static image export (fixed version for stability)
+openpyxl>=3.1.2  # Excel file generation
+Pillow>=10.1.0  # Image processing
