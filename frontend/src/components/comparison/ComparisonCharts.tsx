@@ -30,7 +30,7 @@ export const ComparisonCharts = ({ schedules }: ComparisonChartsProps) => {
   // Prepare data for bar charts
   const barChartData = schedules.map((schedule, index) => {
     const activities = schedule.activities || [];
-    const numFillers = (schedule.config.num_fillers as number) || 4;
+    const numFillers = (schedule.config?.num_fillers as number) || 1;
 
     const totalActivities = activities.length;
     const maxEndTime = activities.length > 0 ? Math.max(...activities.map((a) => a.end_time)) : 0;

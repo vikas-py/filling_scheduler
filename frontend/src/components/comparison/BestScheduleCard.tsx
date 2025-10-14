@@ -26,7 +26,7 @@ export const BestScheduleCard = ({ schedules }: BestScheduleCardProps) => {
   // Calculate scores for each schedule
   const scores: ScheduleScore[] = schedules.map((schedule) => {
     const activities = schedule.activities || [];
-    const numFillers = (schedule.config.num_fillers as number) || 4;
+    const numFillers = (schedule.config?.num_fillers as number) || 1;
 
     const maxEndTime = activities.length > 0 ? Math.max(...activities.map((a) => a.end_time)) : 0;
     const makespan = schedule.total_time || maxEndTime;

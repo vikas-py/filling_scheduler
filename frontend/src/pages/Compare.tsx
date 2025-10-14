@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Container, Typography, Box, Button, Paper, Alert } from '@mui/material';
+import { Container, Typography, Box, Button, Paper, Alert, CircularProgress } from '@mui/material';
 import { CompareArrows, Refresh } from '@mui/icons-material';
-import { getSchedules } from '../api/schedules';
+import { getSchedules, getSchedule } from '../api/schedules';
 import type { Schedule } from '../api/schedules';
 import { ScheduleSelector } from '../components/comparison/ScheduleSelector';
 import { MetricsComparison } from '../components/comparison/MetricsComparison';
@@ -13,6 +13,7 @@ export const Compare = () => {
   const [selectedScheduleIds, setSelectedScheduleIds] = useState<number[]>([]);
   const [selectedSchedules, setSelectedSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSchedules = async () => {
@@ -35,10 +36,32 @@ export const Compare = () => {
   }, []);
 
   useEffect(() => {
-    // Update selected schedules when IDs change
-    const selected = availableSchedules.filter((s) => selectedScheduleIds.includes(s.id));
-    setSelectedSchedules(selected);
-  }, [selectedScheduleIds, availableSchedules]);
+    // Fetch detailed schedule data when IDs change
+    const loadDetailedSchedules = async () => {
+      if (selectedScheduleIds.length === 0) {
+        setSelectedSchedules([]);
+        return;
+      }
+
+      setLoadingDetails(true);
+      setError(null);
+
+      try {
+        // Fetch detailed data for each selected schedule
+        const detailedSchedules = await Promise.all(
+          selectedScheduleIds.map((id) => getSchedule(id))
+        );
+        setSelectedSchedules(detailedSchedules);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load schedule details');
+        setSelectedSchedules([]);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    loadDetailedSchedules();
+  }, [selectedScheduleIds]);
 
   const handleScheduleSelect = (scheduleIds: number[]) => {
     // Limit to maximum 4 schedules for comparison
@@ -113,7 +136,14 @@ export const Compare = () => {
       )}
 
       {/* Comparison Results */}
-      {canCompare ? (
+      {loadingDetails ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <CircularProgress />
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+            Loading schedule details...
+          </Typography>
+        </Paper>
+      ) : canCompare ? (
         <Box>
           <Paper sx={{ p: 3, mb: 3 }}>
             <MetricsComparison schedules={selectedSchedules} />

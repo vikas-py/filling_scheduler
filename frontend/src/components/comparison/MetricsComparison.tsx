@@ -73,7 +73,7 @@ export const MetricsComparison = ({ schedules }: MetricsComparisonProps) => {
   // Calculate metrics for each schedule
   const metrics = schedules.map((schedule) => {
     const activities = schedule.activities || [];
-    const numFillers = (schedule.config.num_fillers as number) || 4;
+    const numFillers = (schedule.config?.num_fillers as number) || 1;
 
     const totalActivities = activities.length;
     const maxEndTime = activities.length > 0 ? Math.max(...activities.map((a) => a.end_time)) : 0;
@@ -91,7 +91,7 @@ export const MetricsComparison = ({ schedules }: MetricsComparisonProps) => {
       makespan,
       avgDuration,
       utilization,
-      numLots: schedule.num_lots,
+      numLots: schedule.num_lots || 0,
     };
   });
 
