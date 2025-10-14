@@ -221,14 +221,19 @@ async def create_schedule_from_file(
         csv_reader = csv.DictReader(io.StringIO(csv_text))
 
         # Convert CSV rows to lots_data format
+        # Default fill rate: 19,920 vials/hour (332 vials/min * 60 min/h)
+        FILL_RATE_VPH = 19920.0
+        
         lots_data = []
         for row in csv_reader:
             # Map CSV columns to expected format
             # CSV has: "Lot ID", "Type", "Vials"
+            vials = int(row.get("Vials", 0))
             lot = {
                 "lot_id": row.get("Lot ID", "").strip(),
                 "lot_type": row.get("Type", "").strip(),
-                "vials": int(row.get("Vials", 0)),
+                "vials": vials,
+                "fill_hours": vials / FILL_RATE_VPH,  # Calculate fill hours from vials
             }
             lots_data.append(lot)
 
