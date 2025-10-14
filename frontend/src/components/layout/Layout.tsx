@@ -32,6 +32,8 @@ import {
 } from '@mui/icons-material'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { HelpDialog } from '@/components/common/HelpDialog'
+import { ConnectionStatus } from '@/components/common/ConnectionStatus'
+import { useRealTime } from '@/contexts/RealTimeContext'
 import { useAuth } from '@/hooks/useAuth'
 import { ROUTES } from '@/utils/constants'
 
@@ -55,6 +57,7 @@ export const Layout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const { status, reconnect } = useRealTime()
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -136,6 +139,7 @@ export const Layout = () => {
 
           {/* User Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ConnectionStatus status={status} onReconnect={reconnect} />
             <Tooltip title="Keyboard shortcuts (Ctrl+/)">
               <IconButton color="inherit" onClick={() => setHelpOpen(true)} aria-label="Show keyboard shortcuts">
                 <HelpIcon />
