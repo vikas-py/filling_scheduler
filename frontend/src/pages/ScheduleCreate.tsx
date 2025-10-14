@@ -85,9 +85,26 @@ export const ScheduleCreate = () => {
 
       setProgressStatus('completed');
       setCreatedScheduleId(schedule.id);
-    } catch (err) {
+    } catch (err: any) {
       setProgressStatus('error');
-      setError(err instanceof Error ? err.message : 'Failed to create schedule');
+      console.error('Schedule creation failed:', err);
+      console.error('Error response:', err.response?.data);
+
+      // Extract detailed error message
+      let errorMessage = 'Failed to create schedule';
+      if (err.response?.data?.detail) {
+        if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        } else if (Array.isArray(err.response.data.detail)) {
+          errorMessage = err.response.data.detail.map((e: any) => e.msg).join(', ');
+        } else {
+          errorMessage = JSON.stringify(err.response.data.detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     }
   };
 
