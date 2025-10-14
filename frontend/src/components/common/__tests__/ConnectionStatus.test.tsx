@@ -40,8 +40,9 @@ describe('ConnectionStatus', () => {
 
     statuses.forEach((status) => {
       const { unmount } = render(<ConnectionStatus status={status} onReconnect={handleReconnect} />);
-      const chip = screen.getByRole('button');
-      chip.click();
+      // Non-error statuses don't have onClick, so they're not buttons
+      const button = screen.queryByRole('button');
+      expect(button).not.toBeInTheDocument();
       unmount();
     });
 

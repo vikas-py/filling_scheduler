@@ -13,8 +13,8 @@ describe('Dashboard Integration', () => {
   it('shows KPI cards section', () => {
     render(<Dashboard />);
 
-    // Should show KPI section (even if empty)
-    const heading = screen.queryByRole('heading');
+    // Should show KPI section with specific heading
+    const heading = screen.getByRole('heading', { name: /Total Schedules/i });
     expect(heading).toBeInTheDocument();
   });
 
