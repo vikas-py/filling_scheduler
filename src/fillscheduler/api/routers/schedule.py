@@ -185,12 +185,12 @@ async def _run_schedule_background(
 
 @router.post("/schedule", response_model=ScheduleResponse, status_code=202)
 async def create_schedule_from_file(
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     strategy: str = Form(...),
     config: str = Form(...),
     csv_file: UploadFile = File(...),
     description: str | None = Form(None),
-    background_tasks: BackgroundTasks = Depends(),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ScheduleResponse:
