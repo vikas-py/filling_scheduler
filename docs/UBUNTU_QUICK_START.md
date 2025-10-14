@@ -26,12 +26,14 @@ sudo bash scripts/install_ubuntu.sh
 - ✅ Creates systemd service
 - ✅ Configures Nginx reverse proxy
 - ✅ Sets up firewall rules
-- ✅ Creates admin user
+- ✅ Optionally creates admin user (or create later)
 - ✅ Starts the application
 
 **Installation time**: 10-15 minutes
 
 **Access your application**: `http://your-server-ip`
+
+**Note**: Admin user creation is optional during installation. You can create it anytime later.
 
 ---
 
@@ -90,7 +92,24 @@ sudo systemctl start filling-scheduler
 
 ---
 
-## 📊 Test Your Installation
+## � Create Admin User (If Skipped During Installation)
+
+If you skipped admin user creation during installation, create it now:
+
+```bash
+cd /opt/filling_scheduler
+source venv/bin/activate
+python scripts/create_admin.py
+```
+
+You can also use command-line arguments:
+```bash
+python scripts/create_admin.py --email admin@example.com --password YourSecurePassword
+```
+
+---
+
+## �📊 Test Your Installation
 
 ### 1. Check Backend Health
 ```bash
@@ -102,7 +121,10 @@ Expected: `{"status":"healthy","version":"1.0.0"}`
 ### 2. Access Frontend
 Open browser: `http://your-server-ip`
 
-### 3. Test PDF Generation
+### 3. Create Admin User (if not done yet)
+See section above ☝️
+
+### 4. Test PDF Generation
 1. Log in with admin credentials
 2. Create a schedule
 3. Click "PDF Report" button

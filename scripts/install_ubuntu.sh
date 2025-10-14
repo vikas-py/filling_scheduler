@@ -114,15 +114,22 @@ fi
 echo "✅ Database will be created automatically on first startup"
 
 echo ""
-echo "👤 Step 9: Creating admin user..."
-echo "You will be prompted to create an admin user."
-echo "Press Enter to continue or Ctrl+C to skip..."
-read -r
+echo "👤 Step 9: Creating admin user (optional)..."
+echo "Do you want to create an admin user now? (y/n)"
+echo "You can also create it later with: python scripts/create_admin.py"
+read -p "Create admin now? [y/N]: " -r CREATE_ADMIN
 
-sudo -u $REAL_USER bash << 'EOF'
+if [[ $CREATE_ADMIN =~ ^[Yy]$ ]]; then
+    sudo -u $REAL_USER bash << 'EOF'
 source venv/bin/activate
 python scripts/create_admin.py
 EOF
+else
+    echo "⏩ Skipping admin user creation. You can create it later with:"
+    echo "   cd /opt/filling_scheduler"
+    echo "   source venv/bin/activate"
+    echo "   python scripts/create_admin.py"
+fi
 
 echo ""
 echo "🔧 Step 10: Creating systemd service..."

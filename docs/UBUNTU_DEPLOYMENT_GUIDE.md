@@ -148,21 +148,33 @@ LOG_LEVEL="INFO"
 python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### Step 7: Initialize Database
+### Step 7: Initialize Database & Create Admin User
+
 ```bash
 source venv/bin/activate
 
 # Database will be automatically created on first app startup
 # No migrations needed - SQLAlchemy creates tables automatically
 
-# Create admin user
+# Create admin user (optional - can be done later)
 python scripts/create_admin.py
 ```
 
-**Note**: The database (SQLite by default) will be automatically created when the FastAPI application starts for the first time via `Base.metadata.create_all()`.
+**Note**:
+- The database (SQLite by default) will be automatically created when the FastAPI application starts for the first time via `Base.metadata.create_all()`.
+- **Admin user creation is optional** - you can skip it now and create it later at any time.
+
+**To create admin user later:**
+```bash
+cd /opt/filling_scheduler
+source venv/bin/activate
+python scripts/create_admin.py
+
+# Or with command-line arguments:
+python scripts/create_admin.py --email admin@example.com --password SecurePass123
+```
 
 Enter admin credentials when prompted:
-- Username: `admin`
 - Email: `admin@yourdomain.com`
 - Password: (choose a strong password)
 
