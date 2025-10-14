@@ -77,7 +77,8 @@ export const createSchedule = async (data: ScheduleCreateRequest): Promise<Sched
   formData.append('config', JSON.stringify(data.config));
   formData.append('csv_file', data.csv_file);
 
-  const response = await api.post<Schedule>('/schedules', formData, {
+  // Backend endpoint is /schedule (singular), not /schedules
+  const response = await api.post<Schedule>('/schedule', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -117,13 +118,15 @@ export const getSchedules = async (
 
 // Get a single schedule by ID
 export const getSchedule = async (id: number): Promise<Schedule> => {
-  const response = await api.get<Schedule>(`/schedules/${id}`);
+  // Backend uses /schedule/{id} (singular)
+  const response = await api.get<Schedule>(`/schedule/${id}`);
   return response.data;
 };
 
 // Delete a schedule
 export const deleteSchedule = async (id: number): Promise<void> => {
-  await api.delete(`/schedules/${id}`);
+  // Backend uses /schedule/{id} (singular)
+  await api.delete(`/schedule/${id}`);
 };
 
 // Get dashboard statistics

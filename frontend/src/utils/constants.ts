@@ -20,11 +20,12 @@ export const API_ENDPOINTS = {
   ME: '/api/v1/auth/me',
 
   // Schedules
-  SCHEDULES: '/api/v1/schedules',
-  SCHEDULE_BY_ID: (id: number) => `/api/v1/schedules/${id}`,
-  SCHEDULE_EXPORT: (id: number, format: string) => `/api/v1/schedules/${id}/export/${format}`,
-  SCHEDULE_VALIDATE: '/api/v1/schedules/validate',
-  STRATEGIES: '/api/v1/schedules/strategies',
+  SCHEDULES: '/api/v1/schedules', // List schedules (GET)
+  SCHEDULE_CREATE: '/api/v1/schedule', // Create schedule (POST) - singular
+  SCHEDULE_BY_ID: (id: number) => `/api/v1/schedule/${id}`, // Get/Delete schedule - singular
+  SCHEDULE_EXPORT: (id: number, format: string) => `/api/v1/schedule/${id}/export/${format}`,
+  SCHEDULE_VALIDATE: '/api/v1/schedule/validate',
+  STRATEGIES: '/api/v1/strategies', // Get strategies list
 
   // Comparisons
   COMPARISONS: '/api/v1/comparisons',
