@@ -39,7 +39,8 @@ except ImportError:
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Default database path (relative to project root)
-DEFAULT_DB_PATH = "filling_scheduler.db"
+# Must match DATABASE_URL in config.py: sqlite:///./fillscheduler.db
+DEFAULT_DB_PATH = "fillscheduler.db"
 
 
 def hash_password(password: str) -> str:
