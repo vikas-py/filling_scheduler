@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { Dashboard } from '@/pages/Dashboard'
+import { SchedulesList } from '@/pages/SchedulesList';
 import { ScheduleCreate } from '@/pages/ScheduleCreate'
 import { ScheduleDetail } from '@/pages/ScheduleDetail'
 import { Compare } from '@/pages/Compare'
@@ -41,7 +42,7 @@ export const router = createBrowserRouter([
       // Placeholder routes (to be implemented in next phases)
       {
         path: ROUTES.SCHEDULES,
-        element: <div>Schedules Page (Coming Soon)</div>,
+        element: <SchedulesList />,
       },
       {
         path: ROUTES.SCHEDULE_NEW,

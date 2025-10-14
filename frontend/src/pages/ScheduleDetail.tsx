@@ -19,6 +19,7 @@ import {
   Delete,
   Refresh,
 } from '@mui/icons-material';
+import { getSchedule, deleteSchedule } from '../api/schedules';
 import { getSchedule } from '../api/schedules';
 import type { Schedule } from '../api/schedules';
 import { GanttChart } from '../components/visualization/GanttChart';
@@ -92,7 +93,7 @@ export const ScheduleDetail = () => {
     }
 
     try {
-      // TODO: Implement delete
+      await deleteSchedule(schedule.id);
       navigate('/schedules');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete schedule');
@@ -100,8 +101,44 @@ export const ScheduleDetail = () => {
   };
 
   const handleExport = (format: 'csv' | 'json' | 'png') => {
-    // TODO: Implement export functionality
-    console.log(`Exporting schedule ${id} as ${format}`);
+    if (!schedule) return;
+    if (format === 'csv') {
+      // Convert activities to CSV
+      const activities = schedule.activities || [];
+      const csvRows = [
+        'Activity ID,Lot ID,Filler ID,Start Time,End Time,Duration,Num Units',
+        ...activities.map((lot: any) => `${lot.id},${lot.lot_id},${lot.filler_id},${lot.start_time},${lot.end_time},${lot.duration},${lot.num_units ?? ''}`)
+      ];
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${schedule.name || 'schedule'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'json') {
+      // Download schedule as JSON
+      const blob = new Blob([JSON.stringify(schedule, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${schedule.name || 'schedule'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'png') {
+      // Export Gantt chart as PNG
+      const chart = document.querySelector('canvas');
+      if (chart && (chart as HTMLCanvasElement).toDataURL) {
+        const url = (chart as HTMLCanvasElement).toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${schedule.name || 'schedule'}_chart.png`;
+        a.click();
+      } else {
+        alert('Chart export not supported in this browser.');
+      }
+    }
   };
 
   if (loading) {

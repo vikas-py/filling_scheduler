@@ -22,10 +22,17 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ScheduleFiltersBar } from '@/components/dashboard/ScheduleFiltersBar';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import type { ScheduleFilters } from '@/components/dashboard/ScheduleFiltersBar';
-import { getSchedules, deleteSchedule } from '@/api/schedules';
+import { getSchedules, deleteSchedule, getScheduleStats } from '@/api/schedules';
 import type { Schedule } from '@/api/schedules';
 
 export const Dashboard = () => {
+  const [chartData, setChartData] = useState<{
+    strategies: { name: string; schedules: number }[];
+    status: { name: string; value: number; color: string }[];
+  }>({
+    strategies: [],
+    status: [],
+  });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<ScheduleFilters>({
@@ -33,8 +40,14 @@ export const Dashboard = () => {
     status: 'all',
     strategy: 'all',
   });
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [kpiStats, setKpiStats] = useState({
+      total_schedules: 0,
+      active_schedules: 0,
+      completed_schedules: 0,
+      failed_schedules: 0,
+    });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -49,23 +62,31 @@ export const Dashboard = () => {
 
   // Fetch schedules from API
   useEffect(() => {
-    const fetchSchedules = async () => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await getSchedules(1, 10, {
-          status: filters.status !== 'all' ? filters.status : undefined,
-          strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
-          search: filters.search || undefined,
-        });
+        const [response, stats] = await Promise.all([
+          getSchedules(1, 10, {
+            status: filters.status !== 'all' ? filters.status : undefined,
+            strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
+            search: filters.search || undefined,
+          }),
+          getScheduleStats(),
+        ]);
         setSchedules(response.schedules);
+        setKpiStats(stats);
+        // Prepare chart data from stats
+        setChartData({
+          strategies: Object.entries(stats.strategies_distribution || {}).map(([name, schedules]) => ({ name, schedules })),
+          status: Object.entries(stats.status_distribution || {}).map(([name, value], i) => ({ name, value, color: ['#4caf50','#2196f3','#ff9800','#f44336'][i % 4] })),
+        });
       } catch (error) {
-        console.error('Failed to fetch schedules:', error);
+        setSnackbar({ open: true, message: 'Failed to fetch dashboard data', severity: 'error' });
       } finally {
         setLoading(false);
       }
     };
-
-    fetchSchedules();
+    fetchDashboardData();
   }, [filters]);
 
   const handleViewSchedule = (id: number) => {
@@ -133,7 +154,14 @@ export const Dashboard = () => {
       <QuickActions />
 
       {/* KPI Cards */}
-      <DashboardKpiCards />
+        <DashboardKpiCards
+          data={[
+            { label: 'Total Schedules', value: kpiStats.total_schedules, color: '#1976d2' },
+            { label: 'Active', value: kpiStats.active_schedules, color: '#388e3c' },
+            { label: 'Completed', value: kpiStats.completed_schedules, color: '#0288d1' },
+            { label: 'Failed', value: kpiStats.failed_schedules, color: '#d32f2f' },
+          ]}
+        />
 
       {/* Filters */}
       <Box sx={{ mt: 4 }}>
@@ -156,7 +184,10 @@ export const Dashboard = () => {
       </Box>
 
       {/* Analytics Charts */}
-      <DashboardCharts />
+      <DashboardCharts
+        strategiesData={chartData.strategies}
+        statusData={chartData.status}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog

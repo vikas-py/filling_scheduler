@@ -66,6 +66,8 @@ export interface ScheduleStats {
   active_schedules: number;
   completed_schedules: number;
   failed_schedules: number;
+  strategies_distribution?: Record<string, number>;
+  status_distribution?: Record<string, number>;
 }
 
 // Create a new schedule
