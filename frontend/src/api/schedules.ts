@@ -19,6 +19,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export interface Activity {
+  id: string;
+  lot_id: string;
+  filler_id: number;
+  start_time: number;
+  end_time: number;
+  duration: number;
+  num_units?: number;
+}
+
 export interface Schedule {
   id: number;
   name: string;
@@ -31,6 +41,7 @@ export interface Schedule {
   num_lots: number;
   total_time?: number;
   result_file?: string;
+  activities?: Activity[];
 }
 
 export interface ScheduleCreateRequest {

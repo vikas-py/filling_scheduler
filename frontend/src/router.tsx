@@ -5,6 +5,7 @@ import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { Dashboard } from '@/pages/Dashboard'
 import { ScheduleCreate } from '@/pages/ScheduleCreate'
+import { ScheduleDetail } from '@/pages/ScheduleDetail'
 import { ROUTES } from '@/utils/constants'
 
 export const router = createBrowserRouter([
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.SCHEDULE_NEW,
         element: <ScheduleCreate />,
+      },
+      {
+        path: '/schedules/:id',
+        element: <ScheduleDetail />,
       },
       {
         path: ROUTES.COMPARE,
