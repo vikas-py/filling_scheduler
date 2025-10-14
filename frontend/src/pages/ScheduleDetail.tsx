@@ -20,7 +20,6 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import { getSchedule, deleteSchedule } from '../api/schedules';
-import { getSchedule } from '../api/schedules';
 import type { Schedule } from '../api/schedules';
 import { GanttChart } from '../components/visualization/GanttChart';
 import { ActivityList } from '../components/visualization/ActivityList';
