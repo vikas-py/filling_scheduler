@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { StrategyType } from '../components/schedule/StrategySelector';
+import { STORAGE_KEYS } from '../utils/constants';
 
 // VITE_API_URL should include /api/v1 prefix (e.g., http://localhost:8000/api/v1)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -13,7 +14,7 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
