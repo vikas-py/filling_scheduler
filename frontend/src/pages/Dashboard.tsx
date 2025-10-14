@@ -1,6 +1,6 @@
 
-import { Container, Typography, Box } from '@mui/material';
-import { useState } from 'react';
+import { Container, Typography, Box, CircularProgress } from '@mui/material';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { DashboardKpiCards } from '@/components/dashboard/DashboardKpiCards';
 import { RecentSchedulesTable } from '@/components/dashboard/RecentSchedulesTable';
@@ -8,29 +8,53 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ScheduleFiltersBar } from '@/components/dashboard/ScheduleFiltersBar';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import type { ScheduleFilters } from '@/components/dashboard/ScheduleFiltersBar';
+import { getSchedules } from '@/api/schedules';
+import type { Schedule } from '@/api/schedules';
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const [, setFilters] = useState<ScheduleFilters>({
+  const [filters, setFilters] = useState<ScheduleFilters>({
     search: '',
     status: 'all',
     strategy: 'all',
   });
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch schedules from API
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        setLoading(true);
+        const response = await getSchedules(1, 10, {
+          status: filters.status !== 'all' ? filters.status : undefined,
+          strategy: filters.strategy !== 'all' ? filters.strategy : undefined,
+          search: filters.search || undefined,
+        });
+        setSchedules(response.schedules);
+      } catch (error) {
+        console.error('Failed to fetch schedules:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSchedules();
+  }, [filters]);
 
   const handleViewSchedule = (id: number) => {
     console.log('Viewing schedule:', id);
     // TODO: Navigate to schedule detail page
   };
 
-  const handleDeleteSchedule = (id: number) => {
+  const handleDeleteSchedule = async (id: number) => {
     console.log('Deleting schedule:', id);
     // TODO: Show confirmation dialog and delete schedule
+    // After deletion, refetch schedules
   };
 
   const handleFilterChange = (newFilters: ScheduleFilters) => {
     setFilters(newFilters);
-    console.log('Filters changed:', newFilters);
-    // TODO: Apply filters to schedules list (will be implemented with backend API)
   };
 
   return (
@@ -55,10 +79,17 @@ export const Dashboard = () => {
 
       {/* Recent Schedules Table */}
       <Box>
-        <RecentSchedulesTable
-          onView={handleViewSchedule}
-          onDelete={handleDeleteSchedule}
-        />
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <RecentSchedulesTable
+            schedules={schedules}
+            onView={handleViewSchedule}
+            onDelete={handleDeleteSchedule}
+          />
+        )}
       </Box>
 
       {/* Analytics Charts */}

@@ -16,57 +16,59 @@ import {
 import { Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import type { Schedule } from '@/api/schedules';
 
-export interface Schedule {
-  id: number;
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  strategy: string;
-  createdAt: Date;
-  numLots: number;
-}
-
-// Mock data for development
+// Mock data for development (matches API format)
 const mockSchedules: Schedule[] = [
   {
     id: 1,
     name: 'Production Run Q4 2025',
     status: 'completed',
     strategy: 'LPT',
-    createdAt: new Date('2025-10-13T10:30:00'),
-    numLots: 45,
+    config: {},
+    created_at: '2025-10-13T10:30:00',
+    updated_at: '2025-10-13T14:30:00',
+    num_lots: 45,
   },
   {
     id: 2,
     name: 'Emergency Order Batch',
     status: 'running',
     strategy: 'SPT',
-    createdAt: new Date('2025-10-14T08:15:00'),
-    numLots: 23,
+    config: {},
+    created_at: '2025-10-14T08:15:00',
+    updated_at: '2025-10-14T08:15:00',
+    num_lots: 23,
   },
   {
     id: 3,
     name: 'Standard Production',
     status: 'pending',
     strategy: 'CFS',
-    createdAt: new Date('2025-10-14T09:00:00'),
-    numLots: 67,
+    config: {},
+    created_at: '2025-10-14T09:00:00',
+    updated_at: '2025-10-14T09:00:00',
+    num_lots: 67,
   },
   {
     id: 4,
     name: 'Optimization Test',
     status: 'failed',
     strategy: 'MILP',
-    createdAt: new Date('2025-10-12T14:20:00'),
-    numLots: 12,
+    config: {},
+    created_at: '2025-10-12T14:20:00',
+    updated_at: '2025-10-12T14:25:00',
+    num_lots: 12,
   },
   {
     id: 5,
     name: 'Weekly Production Schedule',
     status: 'completed',
     strategy: 'Hybrid',
-    createdAt: new Date('2025-10-11T11:45:00'),
-    numLots: 89,
+    config: {},
+    created_at: '2025-10-11T11:45:00',
+    updated_at: '2025-10-11T15:30:00',
+    num_lots: 89,
   },
 ];
 
@@ -172,11 +174,11 @@ export const RecentSchedulesTable = ({
                   <Typography variant="body2">{schedule.strategy}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">{schedule.numLots}</Typography>
+                  <Typography variant="body2">{schedule.num_lots}</Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary">
-                    {format(schedule.createdAt, 'MMM dd, yyyy HH:mm')}
+                    {format(new Date(schedule.created_at), 'MMM dd, yyyy HH:mm')}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
