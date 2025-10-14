@@ -152,12 +152,14 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```bash
 source venv/bin/activate
 
-# Run database migrations
-alembic upgrade head
+# Database will be automatically created on first app startup
+# No migrations needed - SQLAlchemy creates tables automatically
 
 # Create admin user
 python scripts/create_admin.py
 ```
+
+**Note**: The database (SQLite by default) will be automatically created when the FastAPI application starts for the first time via `Base.metadata.create_all()`.
 
 Enter admin credentials when prompted:
 - Username: `admin`
@@ -540,9 +542,11 @@ sudo chown www-data:www-data /opt/filling_scheduler/filling_scheduler.db
 
 # Recreate database (WARNING: deletes all data)
 rm /opt/filling_scheduler/filling_scheduler.db
-source /opt/filling_scheduler/venv/bin/activate
-alembic upgrade head
+# Database will be auto-created on next app startup
+# Just recreate admin user:
 python /opt/filling_scheduler/scripts/create_admin.py
+# Then restart service to initialize database
+sudo systemctl restart filling-scheduler
 ```
 
 ---

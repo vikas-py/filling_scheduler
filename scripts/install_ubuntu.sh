@@ -110,9 +110,8 @@ else
     echo "⚠️  .env file already exists, skipping..."
 fi
 
-# Run database migrations
-source venv/bin/activate
-alembic upgrade head
+# Database will be automatically initialized on first startup by FastAPI
+echo "✅ Database will be created automatically on first startup"
 
 echo ""
 echo "👤 Step 9: Creating admin user..."

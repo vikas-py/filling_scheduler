@@ -39,7 +39,7 @@ except ImportError:
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Default database path (relative to project root)
-DEFAULT_DB_PATH = "src/filling_scheduler.db"
+DEFAULT_DB_PATH = "filling_scheduler.db"
 
 
 def hash_password(password: str) -> str:
@@ -74,6 +74,36 @@ def check_database_exists(db_path: Path) -> bool:
     return db_path.exists()
 
 
+def initialize_database(db_path: Path) -> bool:
+    """
+    Initialize database by importing and running init_db.
+
+    This will create all tables using SQLAlchemy models.
+    """
+    try:
+        # Add src directory to path to import the API modules
+        import sys
+
+        script_dir = Path(__file__).parent
+        project_root = script_dir.parent
+        src_path = project_root / "src"
+
+        if str(src_path) not in sys.path:
+            sys.path.insert(0, str(src_path))
+
+        # Import and run database initialization
+        from fillscheduler.api.database.session import init_db
+
+        print("🔄 Initializing database...")
+        init_db()
+        print(f"✅ Database initialized at: {db_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Failed to initialize database: {e}")
+        return False
+
+
 def create_or_upgrade_admin(email: str, password: str, db_path: Path) -> bool:
     """
     Create a new admin user or upgrade an existing user to admin.
@@ -87,13 +117,14 @@ def create_or_upgrade_admin(email: str, password: str, db_path: Path) -> bool:
         True if successful, False otherwise
     """
     if not check_database_exists(db_path):
-        print(f"\n❌ Database not found at: {db_path}")
-        print("\nThe database hasn't been initialized yet.")
-        print("Please start the backend server once to create the database:")
-        print("  cd src")
-        print("  uvicorn fillscheduler.api.main:app --host 0.0.0.0 --port 8000")
-        print("\nThen run this script again.")
-        return False
+        print(f"\n⚠️  Database not found at: {db_path}")
+        print("Attempting to initialize database...")
+
+        if not initialize_database(db_path):
+            print("\n❌ Failed to initialize database.")
+            print("Please ensure you've installed the package dependencies:")
+            print("  pip install -r requirements.txt")
+            return False
 
     # Hash the password
     hashed_password = hash_password(password)
