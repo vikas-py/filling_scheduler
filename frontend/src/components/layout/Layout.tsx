@@ -18,6 +18,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  Tooltip,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -27,7 +28,10 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { HelpDialog } from '@/components/common/HelpDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { ROUTES } from '@/utils/constants'
 
@@ -54,6 +58,10 @@ export const Layout = () => {
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [helpOpen, setHelpOpen] = useState(false)
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts()
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -128,10 +136,15 @@ export const Layout = () => {
 
           {/* User Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title="Keyboard shortcuts (Ctrl+/)">
+              <IconButton color="inherit" onClick={() => setHelpOpen(true)} aria-label="Show keyboard shortcuts">
+                <HelpIcon />
+              </IconButton>
+            </Tooltip>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user?.email}
             </Typography>
-            <IconButton onClick={handleMenuOpen} size="small">
+            <IconButton onClick={handleMenuOpen} size="small" aria-label="Open user menu">
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
                 {user?.email?.charAt(0).toUpperCase()}
               </Avatar>
@@ -218,6 +231,9 @@ export const Layout = () => {
         <Toolbar /> {/* Spacer for AppBar */}
         <Outlet />
       </Box>
+
+      {/* Help Dialog */}
+      <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </Box>
   )
 }

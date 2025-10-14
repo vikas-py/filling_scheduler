@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { router } from './router'
 import { initializeAuth } from '@/store/authStore'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 
 // Create MUI theme
 const theme = createTheme({
@@ -35,36 +36,38 @@ function App() {
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <RouterProvider router={router} />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#4caf50',
-                secondary: '#fff',
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <RouterProvider router={router} />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: '#f44336',
-                secondary: '#fff',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#4caf50',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-      </ThemeProvider>
-    </QueryClientProvider>
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#f44336',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
