@@ -14,6 +14,7 @@ interface ScheduleStatsProps {
   activities: Activity[];
   numFillers: number;
   totalTime?: number;
+  scheduleStartTime?: string; // ISO datetime string when schedule starts
 }
 
 interface StatCardProps {
@@ -52,7 +53,25 @@ const StatCard = ({ title, value, subtitle, icon, color }: StatCardProps) => (
   </Paper>
 );
 
-export const ScheduleStats = ({ activities, numFillers, totalTime }: ScheduleStatsProps) => {
+export const ScheduleStats = ({ activities, numFillers, totalTime, scheduleStartTime }: ScheduleStatsProps) => {
+  // Format schedule time window
+  const formatDateTime = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getScheduleTimeWindow = (): string => {
+    if (!scheduleStartTime) return '';
+    const startDate = new Date(scheduleStartTime);
+    const endDate = new Date(startDate.getTime() + (totalTime || 0) * 60 * 60 * 1000);
+    return `${formatDateTime(startDate)} - ${formatDateTime(endDate)}`;
+  };
+
   if (!activities || activities.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
@@ -105,6 +124,18 @@ export const ScheduleStats = ({ activities, numFillers, totalTime }: ScheduleSta
       <Typography variant="h6" gutterBottom>
         Schedule Statistics
       </Typography>
+
+      {/* Schedule Time Window */}
+      {scheduleStartTime && (
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'info.light' }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Schedule Time Window
+          </Typography>
+          <Typography variant="body1" fontWeight="medium">
+            {getScheduleTimeWindow()}
+          </Typography>
+        </Paper>
+      )}
 
       {/* Main KPIs */}
       <Stack direction="row" spacing={2} sx={{ mb: 4, flexWrap: 'wrap' }}>

@@ -25,6 +25,7 @@ interface TimelineGanttChartProps {
   activities: Activity[];
   numFillers: number;
   makespan: number;
+  scheduleStartTime?: string; // ISO datetime string when schedule starts
   onActivityClick?: (activity: Activity) => void;
 }
 
@@ -49,12 +50,37 @@ export const TimelineGanttChart = ({
   activities,
   numFillers,
   makespan,
+  scheduleStartTime,
   onActivityClick,
 }: TimelineGanttChartProps) => {
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [filterType, setFilterType] = useState<ActivityFilter>('all');
   const [selectedLot, setSelectedLot] = useState<string | null>(null);
   const [hoveredActivity, setHoveredActivity] = useState<Activity | null>(null);
+
+  // Helper functions for datetime conversion
+  const getActualDateTime = (hoursOffset: number): Date | null => {
+    if (!scheduleStartTime) return null;
+    const startDate = new Date(scheduleStartTime);
+    return new Date(startDate.getTime() + hoursOffset * 60 * 60 * 1000);
+  };
+
+  const formatDateTime = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatDateTimeShort = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+    });
+  };
 
   // Chart dimensions
   const width = 1200;
@@ -390,29 +416,32 @@ export const TimelineGanttChart = ({
           />
 
           {/* Time markers */}
-          {timeMarkers.map((time, idx) => (
-            <g key={`marker-${idx}`}>
-              {/* Tick mark */}
-              <line
-                x1={timeScale(time)}
-                y1={height - bottomMargin}
-                x2={timeScale(time)}
-                y2={height - bottomMargin + 8}
-                stroke="#333"
-                strokeWidth={2}
-              />
+          {timeMarkers.map((time, idx) => {
+            const actualDate = getActualDateTime(time);
+            return (
+              <g key={`marker-${idx}`}>
+                {/* Tick mark */}
+                <line
+                  x1={timeScale(time)}
+                  y1={height - bottomMargin}
+                  x2={timeScale(time)}
+                  y2={height - bottomMargin + 8}
+                  stroke="#333"
+                  strokeWidth={2}
+                />
 
-              {/* Time label */}
-              <text
-                x={timeScale(time)}
-                y={height - bottomMargin + 25}
-                fontSize={12}
-                textAnchor="middle"
-              >
-                {time.toFixed(0)}h
-              </text>
-            </g>
-          ))}
+                {/* Time label */}
+                <text
+                  x={timeScale(time)}
+                  y={height - bottomMargin + 25}
+                  fontSize={11}
+                  textAnchor="middle"
+                >
+                  {actualDate ? formatDateTimeShort(actualDate) : `${time.toFixed(0)}h`}
+                </text>
+              </g>
+            );
+          })}
 
           {/* Axis labels */}
           <text
@@ -422,7 +451,7 @@ export const TimelineGanttChart = ({
             fontWeight="bold"
             textAnchor="middle"
           >
-            Time (hours)
+            {scheduleStartTime ? 'Schedule Timeline' : 'Time (hours)'}
           </text>
 
           <text
@@ -445,7 +474,7 @@ export const TimelineGanttChart = ({
               bgcolor: 'rgba(0, 0, 0, 0.9)',
               color: 'white',
               borderRadius: 1,
-              maxWidth: 300,
+              maxWidth: 320,
               pointerEvents: 'none',
               zIndex: 1000,
             }}
@@ -457,10 +486,16 @@ export const TimelineGanttChart = ({
               <strong>Type:</strong> {hoveredActivity.kind || 'N/A'}
             </Typography>
             <Typography variant="body2">
-              <strong>Start:</strong> {hoveredActivity.start_time.toFixed(2)}h
+              <strong>Start:</strong>{' '}
+              {scheduleStartTime && getActualDateTime(hoveredActivity.start_time)
+                ? formatDateTime(getActualDateTime(hoveredActivity.start_time)!)
+                : `${hoveredActivity.start_time.toFixed(2)}h`}
             </Typography>
             <Typography variant="body2">
-              <strong>End:</strong> {hoveredActivity.end_time.toFixed(2)}h
+              <strong>End:</strong>{' '}
+              {scheduleStartTime && getActualDateTime(hoveredActivity.end_time)
+                ? formatDateTime(getActualDateTime(hoveredActivity.end_time)!)
+                : `${hoveredActivity.end_time.toFixed(2)}h`}
             </Typography>
             <Typography variant="body2">
               <strong>Duration:</strong> {hoveredActivity.duration.toFixed(2)}h

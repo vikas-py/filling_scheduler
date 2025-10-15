@@ -372,6 +372,7 @@ export const ScheduleDetail = () => {
                 activities={schedule.activities}
                 numFillers={(schedule.config.num_fillers as number) || 4}
                 makespan={schedule.makespan || 0}
+                scheduleStartTime={schedule.start_time}
               />
             ) : (
               <Typography variant="body1" color="text.secondary">
@@ -384,7 +385,7 @@ export const ScheduleDetail = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 2 }}>
             {schedule.activities && schedule.activities.length > 0 ? (
-              <ActivityList activities={schedule.activities} />
+              <ActivityList activities={schedule.activities} scheduleStartTime={schedule.start_time} />
             ) : (
               <Typography variant="body1" color="text.secondary">
                 No activities available. Schedule may still be processing.
@@ -400,6 +401,7 @@ export const ScheduleDetail = () => {
                 activities={schedule.activities}
                 numFillers={(schedule.config.num_fillers as number) || 4}
                 totalTime={schedule.total_time}
+                scheduleStartTime={schedule.start_time}
               />
             ) : (
               <Typography variant="body1" color="text.secondary">

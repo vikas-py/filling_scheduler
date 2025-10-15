@@ -28,15 +28,33 @@ interface Activity {
 
 interface ActivityListProps {
   activities: Activity[];
+  scheduleStartTime?: string; // ISO datetime string when schedule starts
 }
 
 type SortField = 'lot_id' | 'filler_id' | 'start_time' | 'end_time' | 'duration';
 type SortOrder = 'asc' | 'desc';
 
-export const ActivityList = ({ activities }: ActivityListProps) => {
+export const ActivityList = ({ activities, scheduleStartTime }: ActivityListProps) => {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('start_time');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  // Helper functions for datetime conversion
+  const getActualDateTime = (hoursOffset: number): Date | null => {
+    if (!scheduleStartTime) return null;
+    const startDate = new Date(scheduleStartTime);
+    return new Date(startDate.getTime() + hoursOffset * 60 * 60 * 1000);
+  };
+
+  const formatDateTime = (date: Date): string => {
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -178,12 +196,16 @@ export const ActivityList = ({ activities }: ActivityListProps) => {
                 </TableCell>
                 <TableCell align="right">
                   <Typography variant="body2">
-                    {activity.start_time.toFixed(2)}h
+                    {scheduleStartTime && getActualDateTime(activity.start_time)
+                      ? formatDateTime(getActualDateTime(activity.start_time)!)
+                      : `${activity.start_time.toFixed(2)}h`}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
                   <Typography variant="body2">
-                    {activity.end_time.toFixed(2)}h
+                    {scheduleStartTime && getActualDateTime(activity.end_time)
+                      ? formatDateTime(getActualDateTime(activity.end_time)!)
+                      : `${activity.end_time.toFixed(2)}h`}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
