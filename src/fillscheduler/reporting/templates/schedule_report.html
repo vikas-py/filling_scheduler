@@ -469,7 +469,7 @@
                     <th>Start (h)</th>
                     <th>End (h)</th>
                     <th>Duration (h)</th>
-                    {% if activities[0].lot_type %}
+                    {% if activities[0].get('lot_type') %}
                     <th>Lot Type</th>
                     {% endif %}
                 </tr>
@@ -477,14 +477,14 @@
             <tbody>
                 {% for activity in activities[:50] %}  {# Limit to first 50 for PDF size #}
                 <tr>
-                    <td>{{ activity.lot_id }}</td>
-                    <td>{{ activity.filler_id }}</td>
-                    <td>{{ activity.kind or 'FILL' }}</td>
-                    <td>{{ "%.2f"|format(activity.start_time) }}</td>
-                    <td>{{ "%.2f"|format(activity.end_time) }}</td>
-                    <td>{{ "%.2f"|format(activity.duration) }}</td>
-                    {% if activity.lot_type %}
-                    <td>{{ activity.lot_type }}</td>
+                    <td>{{ activity['lot_id'] }}</td>
+                    <td>{{ activity['filler_id'] }}</td>
+                    <td>{{ activity.get('kind', 'FILL') }}</td>
+                    <td>{{ "%.2f"|format(activity['start_time']) }}</td>
+                    <td>{{ "%.2f"|format(activity['end_time']) }}</td>
+                    <td>{{ "%.2f"|format(activity['duration']) }}</td>
+                    {% if activity.get('lot_type') %}
+                    <td>{{ activity['lot_type'] }}</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
