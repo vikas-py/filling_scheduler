@@ -64,6 +64,7 @@ A production-grade pharmaceutical filling line scheduler that optimizes lot sequ
 - 🔄 Multi-strategy comparison tools
 - 📄 **Professional PDF reports** with WeasyPrint and Plotly charts
 - 📊 **Excel workbooks** with Summary, Activities, and Configuration sheets
+- 🔗 **Structured JSON API** for external system integration ([docs](docs/STRUCTURED_JSON_FORMAT.md))
 
 ---
 
@@ -315,6 +316,7 @@ pytest --cov=fillscheduler --cov-report=html  # With coverage
 | [Type Checking](docs/type_checking.md) | mypy configuration and type hints guide |
 | [API Reference](docs/api_reference.md) | Programmatic usage |
 | [Examples](docs/examples.md) | Real-world scenarios |
+| [Structured JSON Format](docs/STRUCTURED_JSON_FORMAT.md) | 🆕 Structured JSON export for API integration |
 
 ### Project Planning
 | Document | Description |

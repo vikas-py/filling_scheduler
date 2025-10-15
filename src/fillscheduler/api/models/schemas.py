@@ -470,3 +470,61 @@ class ConfigValidationResponse(BaseModel):
     valid: bool
     errors: list[str] = []
     warnings: list[str] = []
+
+
+# ============================================================================
+# Structured JSON Export Schemas
+# ============================================================================
+
+
+class StructuredScheduleInfo(BaseModel):
+    """Schedule information for structured export."""
+
+    id: int
+    name: str | None
+    strategy: str
+    status: str
+    created_at: datetime
+    completed_at: datetime | None
+
+
+class StructuredActivity(BaseModel):
+    """Activity information for structured export."""
+
+    id: str
+    start: datetime
+    end: datetime
+    duration: float
+    kind: str = Field(..., description="Activity type: FILL, CLEAN, or IDLE")
+    filler_id: int
+    lot_id: str | None = None
+    lot_type: str | None = None
+    note: str | None = None
+    num_units: int | None = None
+
+
+class StructuredResults(BaseModel):
+    """Results section for structured export."""
+
+    makespan: float
+    utilization: float
+    changeovers: float
+    lots_scheduled: int
+    kpis: dict[str, str]
+    activities: list[StructuredActivity]
+
+
+class StructuredMetadata(BaseModel):
+    """Metadata section for structured export."""
+
+    generated_at: datetime
+    api_version: str = "1.0"
+    format_version: str = "1.0"
+
+
+class StructuredScheduleExport(BaseModel):
+    """Complete structured JSON export schema."""
+
+    schedule: StructuredScheduleInfo
+    results: StructuredResults
+    metadata: StructuredMetadata

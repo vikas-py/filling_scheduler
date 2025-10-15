@@ -39,6 +39,11 @@ from fillscheduler.api.models.schemas import (
     ScheduleListResponse,
     ScheduleRequest,
     ScheduleResponse,
+    StructuredActivity,
+    StructuredMetadata,
+    StructuredResults,
+    StructuredScheduleExport,
+    StructuredScheduleInfo,
 )
 from fillscheduler.api.services.scheduler import (
     calculate_schedule_stats,
@@ -864,6 +869,116 @@ async def export_schedule(
             raise HTTPException(
                 status_code=500, detail=f"Failed to generate Excel report: {str(e)}"
             ) from e
+
+
+@router.get("/schedule/{schedule_id}/structured", response_model=dict)
+async def get_structured_schedule(
+    schedule_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get schedule in structured JSON format.
+
+    Returns schedule data in a clean, structured format suitable for:
+    - External API integration
+    - Data export and archival
+    - Third-party system consumption
+
+    Format includes:
+    - Schedule metadata (id, name, strategy, timestamps)
+    - Results (makespan, utilization, KPIs)
+    - Activities with actual datetime stamps
+    - Generation metadata
+    """
+
+    schedule = (
+        db.query(Schedule)
+        .filter(Schedule.id == schedule_id, Schedule.user_id == current_user.id)
+        .first()
+    )
+
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    if schedule.status != "completed":
+        raise HTTPException(status_code=400, detail="Schedule not completed yet")
+
+    result = db.query(ScheduleResult).filter(ScheduleResult.schedule_id == schedule_id).first()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Schedule result not found")
+
+    # Parse activities and KPIs
+    activities_data = json_module.loads(result.activities_json) if result.activities_json else []
+    kpis_data = json_module.loads(result.kpis_json) if result.kpis_json else {}
+
+    # Helper to calculate actual datetime
+    from datetime import timedelta
+
+    def get_actual_datetime(hour_offset: float) -> datetime:
+        if schedule.start_time:
+            return schedule.start_time + timedelta(hours=hour_offset)
+        # Fallback to schedule creation time if no start_time
+        return schedule.created_at + timedelta(hours=hour_offset)
+
+    # Transform activities to structured format
+    structured_activities = []
+    for idx, activity in enumerate(activities_data):
+        start_hours = activity.get("start_time", 0)
+        end_hours = activity.get("end_time", 0)
+        duration = end_hours - start_hours
+
+        # Build activity note
+        note = None
+        if activity.get("type") == "CLEAN":
+            note = "Block reset"
+        elif activity.get("type") == "FILL" or activity.get("type") == "LOT":
+            num_units = activity.get("num_units")
+            if num_units:
+                note = f"{num_units:,} vials"
+
+        structured_act = StructuredActivity(
+            id=f"act-{idx + 1}",
+            start=get_actual_datetime(start_hours),
+            end=get_actual_datetime(end_hours),
+            duration=round(duration, 2),
+            kind=activity.get("type", "FILL").upper(),
+            filler_id=activity.get("filler_id", 0) + 1,  # Convert 0-indexed to 1-indexed
+            lot_id=activity.get("lot_id"),
+            lot_type=activity.get("product") or activity.get("lot_type"),
+            note=note,
+            num_units=activity.get("num_units"),
+        )
+        structured_activities.append(structured_act)
+
+    # Build structured response
+    structured_export = StructuredScheduleExport(
+        schedule=StructuredScheduleInfo(
+            id=schedule.id,
+            name=schedule.name,
+            strategy=schedule.strategy,
+            status=schedule.status,
+            created_at=schedule.created_at,
+            completed_at=schedule.completed_at,
+        ),
+        results=StructuredResults(
+            makespan=round(result.makespan, 2),
+            utilization=round(result.utilization, 2),
+            changeovers=float(result.changeovers),
+            lots_scheduled=result.lots_scheduled,
+            kpis={k: str(v) for k, v in kpis_data.items()},  # Convert all KPI values to strings
+            activities=structured_activities,
+        ),
+        metadata=StructuredMetadata(
+            generated_at=datetime.utcnow(),
+            api_version="1.0",
+            format_version="1.0",
+        ),
+    )
+
+    # Return as dict with proper serialization
+    return structured_export.model_dump(mode="json")
 
 
 @router.post("/schedule/validate", response_model=dict)
