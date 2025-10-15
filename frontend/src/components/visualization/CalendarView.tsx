@@ -7,7 +7,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  Chip,
 } from '@mui/material';
 import {
   ChevronLeft,
@@ -65,17 +64,36 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
   };
 
   // Get color for activity type
-  const getActivityColor = (type: string): string => {
-    switch (type) {
+  const getActivityColor = (kind: string | undefined): string => {
+    switch (kind?.toUpperCase()) {
+      case 'FILL':
       case 'LOT':
         return '#2196f3';
       case 'CLEAN':
+        return '#ff9800';
+      case 'CHANGEOVER':
         return '#ff9800';
       case 'IDLE':
         return '#9e9e9e';
       default:
         return '#757575';
     }
+  };
+
+  // Get activity label
+  const getActivityLabel = (activity: Activity): string => {
+    if (activity.kind?.toUpperCase() === 'FILL' || activity.kind?.toUpperCase() === 'LOT') {
+      return `Lot ${activity.lot_id}`;
+    }
+    return activity.kind || 'Activity';
+  };
+
+  // Get short activity label
+  const getShortActivityLabel = (activity: Activity): string => {
+    if (activity.kind?.toUpperCase() === 'FILL' || activity.kind?.toUpperCase() === 'LOT') {
+      return `L${activity.lot_id}`;
+    }
+    return activity.kind || 'Act';
   };
 
   // Get filler color
@@ -260,11 +278,16 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                       title={
                         <Box>
                           <Typography variant="caption" fontWeight="bold">
-                            {activity.type === 'LOT' ? `Lot ${activity.lot_id}` : activity.type}
+                            {getActivityLabel(activity)}
                           </Typography>
                           <Typography variant="caption" display="block">
                             Filler {activity.filler_id + 1}
                           </Typography>
+                          {activity.lot_type && (
+                            <Typography variant="caption" display="block">
+                              Type: {activity.lot_type}
+                            </Typography>
+                          )}
                           <Typography variant="caption" display="block">
                             {formatTime(getActualDateTime(activity.start_time))} -{' '}
                             {formatTime(getActualDateTime(activity.end_time))}
@@ -272,13 +295,18 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                           <Typography variant="caption" display="block">
                             Duration: {(activity.end_time - activity.start_time).toFixed(2)}h
                           </Typography>
+                          {activity.num_units && (
+                            <Typography variant="caption" display="block">
+                              Units: {activity.num_units.toLocaleString()}
+                            </Typography>
+                          )}
                         </Box>
                       }
                     >
                       <Box
                         sx={{
                           p: 0.5,
-                          bgcolor: getActivityColor(activity.type),
+                          bgcolor: getActivityColor(activity.kind),
                           color: 'white',
                           borderRadius: 1,
                           fontSize: '0.75rem',
@@ -289,10 +317,19 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                           },
                         }}
                       >
-                        <Typography variant="caption" fontWeight="bold" noWrap>
-                          {activity.type === 'LOT' ? `Lot ${activity.lot_id}` : activity.type} (F
-                          {activity.filler_id + 1})
-                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                          <Typography variant="caption" fontWeight="bold" noWrap>
+                            {getActivityLabel(activity)}
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.65rem', opacity: 0.9 }} noWrap>
+                            Filler {activity.filler_id + 1} • {formatTime(getActualDateTime(activity.start_time))}
+                          </Typography>
+                          {activity.lot_type && (
+                            <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.85 }} noWrap>
+                              {activity.lot_type}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
                     </Tooltip>
                   ))}
@@ -336,30 +373,53 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                       title={
                         <Box>
                           <Typography variant="caption" fontWeight="bold">
-                            {activity.type === 'LOT' ? `Lot ${activity.lot_id}` : activity.type}
+                            {getActivityLabel(activity)}
                           </Typography>
                           <Typography variant="caption" display="block">
                             Filler {activity.filler_id + 1}
                           </Typography>
+                          {activity.lot_type && (
+                            <Typography variant="caption" display="block">
+                              Type: {activity.lot_type}
+                            </Typography>
+                          )}
                           <Typography variant="caption" display="block">
                             {formatTime(getActualDateTime(activity.start_time))} -{' '}
                             {formatTime(getActualDateTime(activity.end_time))}
                           </Typography>
+                          {activity.num_units && (
+                            <Typography variant="caption" display="block">
+                              Units: {activity.num_units.toLocaleString()}
+                            </Typography>
+                          )}
                         </Box>
                       }
                     >
-                      <Chip
-                        label={activity.type === 'LOT' ? `L${activity.lot_id}` : activity.type}
-                        size="small"
+                      <Box
                         sx={{
-                          bgcolor: getActivityColor(activity.type),
+                          bgcolor: getActivityColor(activity.kind),
                           color: 'white',
                           fontSize: '0.7rem',
-                          height: 20,
-                          borderLeft: `3px solid ${getFillerColor(activity.filler_id)}`,
+                          px: 0.75,
+                          py: 0.5,
                           borderRadius: 1,
+                          cursor: 'pointer',
+                          borderLeft: `3px solid ${getFillerColor(activity.filler_id)}`,
+                          '&:hover': {
+                            opacity: 0.8,
+                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
                         }}
-                      />
+                      >
+                        <Typography variant="caption" fontWeight="bold" noWrap>
+                          {getShortActivityLabel(activity)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.85 }} noWrap>
+                          (F{activity.filler_id + 1})
+                        </Typography>
+                      </Box>
                     </Tooltip>
                   ))}
                   {day.activities.length > 10 && (
@@ -424,20 +484,30 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                       title={
                         <Box>
                           <Typography variant="caption" fontWeight="bold">
-                            {activity.type === 'LOT' ? `Lot ${activity.lot_id}` : activity.type}
+                            {getActivityLabel(activity)}
                           </Typography>
                           <Typography variant="caption" display="block">
                             Filler {activity.filler_id + 1}
                           </Typography>
+                          {activity.lot_type && (
+                            <Typography variant="caption" display="block">
+                              Type: {activity.lot_type}
+                            </Typography>
+                          )}
                           <Typography variant="caption" display="block">
                             {formatTime(getActualDateTime(activity.start_time))}
                           </Typography>
+                          {activity.num_units && (
+                            <Typography variant="caption" display="block">
+                              Units: {activity.num_units.toLocaleString()}
+                            </Typography>
+                          )}
                         </Box>
                       }
                     >
                       <Box
                         sx={{
-                          bgcolor: getActivityColor(activity.type),
+                          bgcolor: getActivityColor(activity.kind),
                           color: 'white',
                           fontSize: '0.65rem',
                           px: 0.5,
@@ -451,9 +521,13 @@ export const CalendarView = ({ activities, scheduleStartTime }: CalendarViewProp
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.25,
                         }}
                       >
-                        {activity.type === 'LOT' ? `L${activity.lot_id}` : activity.type}
+                        <span style={{ fontWeight: 'bold' }}>{getShortActivityLabel(activity)}</span>
+                        <span style={{ fontSize: '0.55rem', opacity: 0.8 }}>F{activity.filler_id + 1}</span>
                       </Box>
                     </Tooltip>
                   ))}
