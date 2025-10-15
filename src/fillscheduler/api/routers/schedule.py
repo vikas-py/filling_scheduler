@@ -455,6 +455,7 @@ async def get_schedule(
         name=schedule.name,
         strategy=schedule.strategy,
         status=schedule.status,
+        start_time=schedule.start_time,
         created_at=schedule.created_at,
         started_at=schedule.started_at,
         completed_at=schedule.completed_at,
