@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -7,7 +7,20 @@ import {
   ToggleButton,
   Chip,
   Stack,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+  Button,
 } from '@mui/material';
+import {
+  Search,
+  Clear,
+  ZoomIn,
+  ZoomOut,
+  FitScreen,
+  Download,
+} from '@mui/icons-material';
 
 interface Activity {
   id: string;
@@ -57,6 +70,10 @@ export const TimelineGanttChart = ({
   const [filterType, setFilterType] = useState<ActivityFilter>('all');
   const [selectedLot, setSelectedLot] = useState<string | null>(null);
   const [hoveredActivity, setHoveredActivity] = useState<Activity | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
+  const [customZoom, setCustomZoom] = useState<{ start: number; end: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   // Helper functions for datetime conversion
   const getActualDateTime = (hoursOffset: number): Date | null => {
@@ -92,18 +109,32 @@ export const TimelineGanttChart = ({
   const barHeight = 35;
   const height = numFillers * rowHeight + topMargin + bottomMargin;
 
-  // Calculate visible time range based on zoom level
+  // Calculate visible time range based on zoom level or custom zoom
   const visibleTimeRange = useMemo(() => {
+    if (customZoom) {
+      return customZoom;
+    }
     if (zoomLevel === 'all') {
       return { start: 0, end: makespan };
     }
     const hours = parseInt(zoomLevel);
     return { start: 0, end: Math.min(hours, makespan) };
-  }, [zoomLevel, makespan]);
+  }, [zoomLevel, makespan, customZoom]);
 
   // Filter activities
   const filteredActivities = useMemo(() => {
     let result = activities;
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (a) =>
+          a.lot_id.toLowerCase().includes(query) ||
+          a.id.toLowerCase().includes(query) ||
+          (a.lot_type && a.lot_type.toLowerCase().includes(query))
+      );
+    }
 
     // Filter by activity type
     if (filterType !== 'all') {
@@ -118,7 +149,7 @@ export const TimelineGanttChart = ({
     );
 
     return result;
-  }, [activities, filterType, visibleTimeRange]);
+  }, [activities, filterType, visibleTimeRange, searchQuery]);
 
   // Time scale function
   const timeScale = (time: number) => {
@@ -172,9 +203,91 @@ export const TimelineGanttChart = ({
     }
   };
 
+  // Zoom controls
+  const handleZoomIn = () => {
+    const range = visibleTimeRange.end - visibleTimeRange.start;
+    const center = (visibleTimeRange.start + visibleTimeRange.end) / 2;
+    const newRange = range * 0.7; // Zoom in by 30%
+    setCustomZoom({
+      start: Math.max(0, center - newRange / 2),
+      end: Math.min(makespan, center + newRange / 2),
+    });
+    setZoomLevel('all'); // Clear preset zoom
+  };
+
+  const handleZoomOut = () => {
+    const range = visibleTimeRange.end - visibleTimeRange.start;
+    const center = (visibleTimeRange.start + visibleTimeRange.end) / 2;
+    const newRange = Math.min(range * 1.3, makespan); // Zoom out by 30%
+    setCustomZoom({
+      start: Math.max(0, center - newRange / 2),
+      end: Math.min(makespan, center + newRange / 2),
+    });
+    setZoomLevel('all');
+  };
+
+  const handleResetZoom = () => {
+    setCustomZoom(null);
+    setZoomLevel('all');
+  };
+
+  // Export as image
+  const handleExportImage = () => {
+    if (!svgRef.current) return;
+
+    const svg = svgRef.current;
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    canvas.width = width * 2; // Higher resolution
+    canvas.height = height * 2;
+
+    img.onload = () => {
+      ctx?.scale(2, 2);
+      ctx?.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'gantt-chart.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+  };
+
+  // Handle mouse move for tooltip positioning
+  const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setMousePosition({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+  };
+
   // Check if activity is highlighted
   const isActivityHighlighted = (activity: Activity): boolean => {
     return selectedLot !== null && activity.lot_id === selectedLot;
+  };
+
+  // Check if activity matches search
+  const matchesSearch = (activity: Activity): boolean => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      activity.lot_id.toLowerCase().includes(query) ||
+      activity.id.toLowerCase().includes(query) ||
+      (activity.lot_type && activity.lot_type.toLowerCase().includes(query))
+    );
   };
 
   // Calculate activity statistics
@@ -207,6 +320,65 @@ export const TimelineGanttChart = ({
 
   return (
     <Box>
+      {/* Top Controls - Search and Actions */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+          gap: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        {/* Search */}
+        <TextField
+          size="small"
+          placeholder="Search lots..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ minWidth: 250 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearchQuery('')}>
+                  <Clear fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Action Buttons */}
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Zoom In">
+            <IconButton size="small" onClick={handleZoomIn} color="primary">
+              <ZoomIn />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Zoom Out">
+            <IconButton size="small" onClick={handleZoomOut} color="primary">
+              <ZoomOut />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Reset View">
+            <IconButton size="small" onClick={handleResetZoom} color="primary">
+              <FitScreen />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Export as PNG">
+            <IconButton size="small" onClick={handleExportImage} color="primary">
+              <Download />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
       {/* Controls */}
       <Box
         sx={{
@@ -224,9 +396,14 @@ export const TimelineGanttChart = ({
             Zoom:
           </Typography>
           <ToggleButtonGroup
-            value={zoomLevel}
+            value={customZoom ? null : zoomLevel}
             exclusive
-            onChange={(_e, value) => value && setZoomLevel(value)}
+            onChange={(_e, value) => {
+              if (value) {
+                setZoomLevel(value);
+                setCustomZoom(null);
+              }
+            }}
             size="small"
           >
             <ToggleButton value="1h">1h</ToggleButton>
@@ -272,13 +449,39 @@ export const TimelineGanttChart = ({
         </Stack>
       </Box>
 
+      {/* Search Results Info */}
+      {searchQuery && filteredActivities.length > 0 && (
+        <Paper sx={{ p: 1.5, mb: 2, bgcolor: 'info.light', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="body2">
+            Found <strong>{filteredActivities.length}</strong> activities matching "{searchQuery}"
+          </Typography>
+          <Button size="small" onClick={() => setSearchQuery('')} variant="outlined">
+            Clear Search
+          </Button>
+        </Paper>
+      )}
+
       {/* Gantt Chart */}
-      <Paper sx={{ p: 2, overflow: 'auto' }}>
-        <svg
-          width={width}
-          height={height}
-          style={{ display: 'block', margin: '0 auto' }}
-        >
+      <Paper sx={{ p: 2, overflow: 'auto', position: 'relative' }}>
+        {searchQuery && filteredActivities.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              No activities found matching "{searchQuery}"
+            </Typography>
+            <Button size="small" onClick={() => setSearchQuery('')} sx={{ mt: 1 }}>
+              Clear Search
+            </Button>
+          </Box>
+        )}
+        {(searchQuery === '' || filteredActivities.length > 0) && (
+          <svg
+            ref={svgRef}
+            width={width}
+            height={height}
+            style={{ display: 'block', margin: '0 auto' }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setHoveredActivity(null)}
+          >
           {/* Grid lines */}
           {timeMarkers.map((time, idx) => (
             <line
@@ -335,17 +538,32 @@ export const TimelineGanttChart = ({
             );
             const isHighlighted = isActivityHighlighted(activity);
             const isHovered = hoveredActivity?.id === activity.id;
+            const isSearchMatch = searchQuery && matchesSearch(activity);
 
             return (
               <g key={`activity-${idx}`}>
+                {/* Glow effect for search matches */}
+                {isSearchMatch && (
+                  <rect
+                    x={x - 2}
+                    y={y - 2}
+                    width={barWidth + 4}
+                    height={barHeight + 4}
+                    fill="none"
+                    stroke="#FFD700"
+                    strokeWidth={2}
+                    opacity={0.7}
+                    rx={2}
+                  />
+                )}
                 <rect
                   x={x}
                   y={y}
                   width={barWidth}
                   height={barHeight}
                   fill={getActivityColor(activity)}
-                  stroke={isHighlighted || isHovered ? '#000' : '#333'}
-                  strokeWidth={isHighlighted ? 3 : isHovered ? 2 : 1}
+                  stroke={isHighlighted || isHovered ? '#000' : isSearchMatch ? '#FFD700' : '#333'}
+                  strokeWidth={isHighlighted ? 3 : isHovered || isSearchMatch ? 2 : 1}
                   opacity={
                     selectedLot === null
                       ? isHovered
@@ -464,12 +682,15 @@ export const TimelineGanttChart = ({
             Resources
           </text>
         </svg>
+        )}
 
         {/* Hover tooltip */}
-        {hoveredActivity && (
+        {hoveredActivity && mousePosition && (
           <Paper
             sx={{
               position: 'absolute',
+              left: Math.min(mousePosition.x + 10, width - 320),
+              top: Math.max(mousePosition.y - 100, 10),
               p: 1.5,
               bgcolor: 'rgba(0, 0, 0, 0.9)',
               color: 'white',
