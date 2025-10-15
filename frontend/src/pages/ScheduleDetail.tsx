@@ -28,6 +28,7 @@ import type { Schedule, Activity } from '../api/schedules';
 import { TimelineGanttChart } from '../components/visualization/TimelineGanttChart';
 import { ActivityList } from '../components/visualization/ActivityList';
 import { ScheduleStats } from '../components/visualization/ScheduleStats';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -173,7 +174,7 @@ export const ScheduleDetail = () => {
       // Export PDF or Excel report via backend API
       setExportingPDF(true);
       try {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         const response = await fetch(
           `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/schedule/${schedule.id}/export?format=${format}`,
           {
