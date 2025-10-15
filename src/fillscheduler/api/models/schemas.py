@@ -134,6 +134,7 @@ class ScheduleResponse(BaseModel):
     name: str | None
     strategy: str
     status: str
+    start_time: datetime | None
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None

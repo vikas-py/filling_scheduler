@@ -192,6 +192,7 @@ async def create_schedule_from_file(
     config: str = Form(...),
     csv_file: UploadFile = File(...),
     description: str | None = Form(None),
+    start_time: str | None = Form(None),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ScheduleResponse:
@@ -268,6 +269,31 @@ async def create_schedule_from_file(
             },
         )
 
+    # Parse start_time if provided
+    schedule_start_time = None
+    if start_time:
+        try:
+            from datetime import datetime
+
+            # Support multiple datetime formats
+            for fmt in [
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%dT%H:%M",
+                "%Y-%m-%d %H:%M:%S",
+            ]:
+                try:
+                    schedule_start_time = datetime.strptime(start_time, fmt)
+                    break
+                except ValueError:
+                    continue
+            if schedule_start_time is None:
+                raise ValueError(f"Could not parse start_time: {start_time}")
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid start_time format: {str(e)}"
+            ) from e
+
     # Create schedule record
     # Note: description is ignored as Schedule model doesn't have this field
     schedule = Schedule(
@@ -276,6 +302,7 @@ async def create_schedule_from_file(
         strategy=strategy,
         status="pending",
         config_json=json_module.dumps(config_dict),
+        start_time=schedule_start_time,
     )
     db.add(schedule)
     db.commit()

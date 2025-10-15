@@ -52,6 +52,7 @@ class Schedule(Base):
     )  # pending, running, completed, failed
     error_message = Column(Text, nullable=True)
     config_json = Column(Text, nullable=True)  # JSON string for SQLite, JSONB for PostgreSQL
+    start_time = Column(DateTime, nullable=True)  # When the schedule should start
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)

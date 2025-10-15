@@ -40,6 +40,7 @@ export interface Schedule {
   status: 'pending' | 'running' | 'completed' | 'failed';
   strategy: string;
   config: Record<string, unknown>;
+  start_time?: string;
   created_at: string;
   updated_at: string;
   num_lots: number;
@@ -54,6 +55,7 @@ export interface Schedule {
 export interface ScheduleCreateRequest {
   name: string;
   description?: string;
+  start_time?: string;
   strategy: StrategyType;
   config: Record<string, unknown>;
   csv_file: File;
@@ -85,6 +87,9 @@ export const createSchedule = async (data: ScheduleCreateRequest): Promise<Sched
   formData.append('name', data.name);
   if (data.description) {
     formData.append('description', data.description);
+  }
+  if (data.start_time) {
+    formData.append('start_time', data.start_time);
   }
   formData.append('strategy', data.strategy);
   formData.append('config', JSON.stringify(data.config));

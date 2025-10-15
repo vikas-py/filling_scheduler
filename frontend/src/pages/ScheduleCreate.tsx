@@ -17,6 +17,7 @@ export const ScheduleCreate = () => {
   // Form state
   const [scheduleName, setScheduleName] = useState('');
   const [scheduleDescription, setScheduleDescription] = useState('');
+  const [scheduleStartTime, setScheduleStartTime] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyType | null>(null);
   const [config, setConfig] = useState<Record<string, unknown>>({});
@@ -38,6 +39,7 @@ export const ScheduleCreate = () => {
     setActiveStep(0);
     setScheduleName('');
     setScheduleDescription('');
+    setScheduleStartTime('');
     setCsvFile(null);
     setSelectedStrategy(null);
     setConfig({});
@@ -81,6 +83,7 @@ export const ScheduleCreate = () => {
         strategy: selectedStrategy,
         config,
         csv_file: csvFile,
+        start_time: scheduleStartTime || undefined,
       });
 
       setProgressStatus('completed');
@@ -241,6 +244,18 @@ export const ScheduleCreate = () => {
                       multiline
                       rows={2}
                       placeholder="Optional description"
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Start Time"
+                      type="datetime-local"
+                      value={scheduleStartTime}
+                      onChange={(e) => setScheduleStartTime(e.target.value)}
+                      helperText="Optional - when should this schedule start?"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
                     />
                   </Box>
 
