@@ -117,17 +117,12 @@ export const TimelineGanttChart = ({
   // Calculate heights for each task group
   const taskGroupHeights = useMemo(() => {
     return activityGroups.map(group => {
-      // Find max concurrent activities (activities that overlap in time)
-      const maxConcurrent = Math.max(1, group.activities.length > 0 ?
-        Math.max(...group.activities.map((_, idx) => {
-          // Count how many other activities overlap with this one
-          const current = group.activities[idx];
-          return group.activities.filter(a =>
-            a.start_time < current.end_time && a.end_time > current.start_time
-          ).length;
-        })) : 1
-      );
-      return taskHeaderHeight + taskPadding + (maxConcurrent * (activityBarHeight + activitySpacing)) + taskPadding;
+      // Each activity gets its own row (stacked vertically)
+      const numActivities = group.activities.length;
+      if (numActivities === 0) {
+        return taskHeaderHeight + taskPadding * 2 + activityBarHeight; // Minimum height
+      }
+      return taskHeaderHeight + taskPadding + (numActivities * (activityBarHeight + activitySpacing)) + taskPadding;
     });
   }, [activityGroups, taskHeaderHeight, taskPadding, activityBarHeight, activitySpacing]);
 
@@ -848,35 +843,12 @@ export const TimelineGanttChart = ({
               return timeVisible && typeMatch && searchMatch;
             });
 
-            // Sort activities by start time
+            // Sort activities by start time to display in chronological order
             const sortedActivities = [...groupActivities].sort((a, b) => a.start_time - b.start_time);
 
-            // Assign activities to rows to avoid overlap
-            const activityRows: Activity[][] = [];
-            sortedActivities.forEach(activity => {
-              // Find a row where this activity doesn't overlap with any existing activity
-              let placed = false;
-              for (let rowIdx = 0; rowIdx < activityRows.length; rowIdx++) {
-                const row = activityRows[rowIdx];
-                const overlaps = row.some(a =>
-                  a.start_time < activity.end_time && a.end_time > activity.start_time
-                );
-                if (!overlaps) {
-                  row.push(activity);
-                  placed = true;
-                  break;
-                }
-              }
-              // If no suitable row found, create a new row
-              if (!placed) {
-                activityRows.push([activity]);
-              }
-            });
-
-            // Render activities
-            return activityRows.flatMap((row, rowIdx) =>
-              row.map((activity, actIdx) => {
-                const y = groupYPos + taskHeaderHeight + taskPadding + rowIdx * (activityBarHeight + activitySpacing);
+            // Render activities - each activity gets its own row (stacked vertically)
+            return sortedActivities.map((activity, actIdx) => {
+                const y = groupYPos + taskHeaderHeight + taskPadding + actIdx * (activityBarHeight + activitySpacing);
                 const x = timeScale(activity.start_time);
                 const barWidth = Math.max(
                   timeScale(activity.end_time) - x,
@@ -885,7 +857,7 @@ export const TimelineGanttChart = ({
                 const isHighlighted = isActivityHighlighted(activity);
                 const isHovered = hoveredActivity?.id === activity.id;
                 const isSearchMatch = searchQuery && matchesSearch(activity);
-                const uniqueId = `${groupIdx}-${rowIdx}-${actIdx}`;
+                const uniqueId = `${groupIdx}-${actIdx}`;
 
                 return (
                   <g key={`activity-${uniqueId}`}>
@@ -975,8 +947,7 @@ export const TimelineGanttChart = ({
                     )}
                   </g>
                 );
-              })
-            );
+            });
           })}
 
           {/* X-axis */}
