@@ -28,6 +28,7 @@ import type { Schedule, Activity } from '../api/schedules';
 import { TimelineGanttChart } from '../components/visualization/TimelineGanttChart';
 import { ActivityList } from '../components/visualization/ActivityList';
 import { ScheduleStats } from '../components/visualization/ScheduleStats';
+import { CalendarView } from '../components/visualization/CalendarView';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 interface TabPanelProps {
@@ -360,6 +361,7 @@ export const ScheduleDetail = () => {
       <Paper>
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="Gantt Chart" />
+          <Tab label="Calendar View" />
           <Tab label="Activity List" />
           <Tab label="Statistics" />
           <Tab label="Configuration" />
@@ -385,7 +387,10 @@ export const ScheduleDetail = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 2 }}>
             {schedule.activities && schedule.activities.length > 0 ? (
-              <ActivityList activities={schedule.activities} scheduleStartTime={schedule.start_time} />
+              <CalendarView
+                activities={schedule.activities}
+                scheduleStartTime={schedule.start_time}
+              />
             ) : (
               <Typography variant="body1" color="text.secondary">
                 No activities available. Schedule may still be processing.
@@ -395,6 +400,18 @@ export const ScheduleDetail = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
+          <Box sx={{ p: 2 }}>
+            {schedule.activities && schedule.activities.length > 0 ? (
+              <ActivityList activities={schedule.activities} scheduleStartTime={schedule.start_time} />
+            ) : (
+              <Typography variant="body1" color="text.secondary">
+                No activities available. Schedule may still be processing.
+              </Typography>
+            )}
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
           <Box sx={{ p: 2 }}>
             {schedule.activities && schedule.activities.length > 0 ? (
               <ScheduleStats
@@ -411,7 +428,7 @@ export const ScheduleDetail = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={4}>
           <Box sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Configuration
