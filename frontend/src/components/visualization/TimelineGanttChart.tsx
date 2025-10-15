@@ -95,13 +95,53 @@ export const TimelineGanttChart = ({
 
   // Chart dimensions
   const width = 1200;
-  const leftMargin = 250; // Increased for task details panel
+  const leftMargin = 150; // Task name column
   const rightMargin = 50;
-  const topMargin = 60; // Increased for dual-row timeline header
-  const bottomMargin = 60;
-  const rowHeight = 50;
-  const barHeight = 35;
-  const height = numFillers * rowHeight + topMargin + bottomMargin;
+  const topMargin = 80; // Header with dates and days
+  const bottomMargin = 40;
+  const activityBarHeight = 28; // Height of each activity bar
+  const activitySpacing = 4; // Space between stacked activities
+  const taskHeaderHeight = 35; // Height of task group header
+  const taskPadding = 10; // Padding within task group
+
+  // Group activities by filler (equipment)
+  const activityGroups = useMemo(() => {
+    const groups: { fillerId: number; activities: Activity[] }[] = [];
+    for (let i = 1; i <= numFillers; i++) {
+      const fillerActivities = activities.filter(a => a.filler_id === i);
+      groups.push({ fillerId: i, activities: fillerActivities });
+    }
+    return groups;
+  }, [activities, numFillers]);
+
+  // Calculate heights for each task group
+  const taskGroupHeights = useMemo(() => {
+    return activityGroups.map(group => {
+      // Find max concurrent activities (activities that overlap in time)
+      const maxConcurrent = Math.max(1, group.activities.length > 0 ?
+        Math.max(...group.activities.map((_, idx) => {
+          // Count how many other activities overlap with this one
+          const current = group.activities[idx];
+          return group.activities.filter(a =>
+            a.start_time < current.end_time && a.end_time > current.start_time
+          ).length;
+        })) : 1
+      );
+      return taskHeaderHeight + taskPadding + (maxConcurrent * (activityBarHeight + activitySpacing)) + taskPadding;
+    });
+  }, [activityGroups, taskHeaderHeight, taskPadding, activityBarHeight, activitySpacing]);
+
+  // Calculate cumulative Y positions for each task group
+  const taskGroupYPositions = useMemo(() => {
+    const positions: number[] = [topMargin];
+    for (let i = 0; i < taskGroupHeights.length - 1; i++) {
+      positions.push(positions[i] + taskGroupHeights[i]);
+    }
+    return positions;
+  }, [taskGroupHeights, topMargin]);
+
+  // Total chart height
+  const height = topMargin + taskGroupHeights.reduce((sum, h) => sum + h, 0) + bottomMargin;
 
   // Calculate visible time range based on zoom level or custom zoom
   const visibleTimeRange = useMemo(() => {
@@ -517,75 +557,170 @@ export const TimelineGanttChart = ({
             Load
           </text>
 
-          {/* Header background for timeline area */}
+          {/* Header background */}
           <rect
-            x={leftMargin}
+            x={0}
             y={0}
-            width={width - leftMargin - rightMargin}
+            width={width}
             height={topMargin}
-            fill="#f0f0f0"
+            fill="#e8eaed"
             stroke="#ccc"
             strokeWidth={1}
           />
 
-          {/* Top row - Date groupings */}
-          {scheduleStartTime && timeMarkers.length > 1 && (() => {
-            const dates: { date: string; startX: number; endX: number }[] = [];
-            let currentDate = '';
-            let startX = leftMargin;
+          {/* Task Name column header */}
+          <rect
+            x={0}
+            y={0}
+            width={leftMargin}
+            height={topMargin}
+            fill="#e8eaed"
+            stroke="#ccc"
+            strokeWidth={1}
+          />
+          <text
+            x={leftMargin / 2}
+            y={25}
+            fontSize={12}
+            fontWeight="600"
+            textAnchor="middle"
+            fill="#333"
+          >
+            Task Name
+          </text>
 
-            timeMarkers.forEach((time) => {
-              const actualDate = getActualDateTime(time);
-              if (actualDate) {
-                const dateStr = actualDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                });
-                if (dateStr !== currentDate && currentDate !== '') {
-                  dates.push({ date: currentDate, startX, endX: timeScale(time) });
-                  startX = timeScale(time);
-                }
-                currentDate = dateStr;
+          {/* Timeline header with date ranges and day-of-week */}
+          {scheduleStartTime && (() => {
+            const startDate = new Date(scheduleStartTime);
+            const endDate = new Date(startDate.getTime() + visibleTimeRange.end * 60 * 60 * 1000);
+
+            // Generate date range groups (week ranges)
+            const dateRanges: { label: string; startX: number; endX: number }[] = [];
+            const dayMarkers: { day: string; x: number; date: Date }[] = [];
+
+            // Calculate number of days to show
+            const totalHours = visibleTimeRange.end - visibleTimeRange.start;
+            const totalDays = Math.ceil(totalHours / 24);
+
+            let currentDate = new Date(startDate.getTime() + visibleTimeRange.start * 60 * 60 * 1000);
+            currentDate.setHours(0, 0, 0, 0); // Start of day
+
+            // Generate week groupings
+            let weekStart = new Date(currentDate);
+            let weekLabel = '';
+            let weekStartX = leftMargin;
+
+            for (let day = 0; day <= totalDays; day++) {
+              const date = new Date(currentDate.getTime() + day * 24 * 60 * 60 * 1000);
+              const hoursFromScheduleStart = (date.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+
+              if (hoursFromScheduleStart < visibleTimeRange.start) continue;
+              if (hoursFromScheduleStart > visibleTimeRange.end) break;
+
+              const x = timeScale(hoursFromScheduleStart);
+
+              // Check if we need to start a new week group
+              const isMonday = date.getDay() === 1 || day === 0;
+              if (isMonday && day > 0) {
+                // End previous week
+                const endDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+                weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                dateRanges.push({ label: weekLabel, startX: weekStartX, endX: x });
+
+                // Start new week
+                weekStart = new Date(date);
+                weekStartX = x;
               }
-            });
-            // Add last date
-            if (currentDate !== '') {
-              dates.push({ date: currentDate, startX, endX: timeScale(visibleTimeRange.end) });
+
+              // Add day marker
+              dayMarkers.push({
+                day: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+                x: x,
+                date: date
+              });
             }
 
-            return dates.map((d, idx) => (
-              <g key={`date-group-${idx}`}>
+            // Add last week group
+            if (weekStart) {
+              weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+              dateRanges.push({ label: weekLabel, startX: weekStartX, endX: width - rightMargin });
+            }
+
+            return (
+              <>
+                {/* Top row - Date range groups */}
+                {dateRanges.map((range, idx) => (
+                  <g key={`date-range-${idx}`}>
+                    <line
+                      x1={range.startX}
+                      y1={0}
+                      x2={range.startX}
+                      y2={topMargin}
+                      stroke="#999"
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={(range.startX + range.endX) / 2}
+                      y={20}
+                      fontSize={11}
+                      fontWeight="600"
+                      textAnchor="middle"
+                      fill="#333"
+                    >
+                      {range.label}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Divider line */}
                 <line
-                  x1={d.startX}
-                  y1={0}
-                  x2={d.startX}
-                  y2={topMargin}
+                  x1={leftMargin}
+                  y1={35}
+                  x2={width - rightMargin}
+                  y2={35}
                   stroke="#999"
                   strokeWidth={1}
                 />
-                <text
-                  x={(d.startX + d.endX) / 2}
-                  y={20}
-                  fontSize={12}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill="#333"
-                >
-                  {d.date}
-                </text>
-              </g>
-            ));
-          })()}
 
-          {/* Divider line between date and time rows */}
-          <line
-            x1={leftMargin}
-            y1={30}
-            x2={width - rightMargin}
-            y2={30}
-            stroke="#ccc"
-            strokeWidth={1}
-          />
+                {/* Bottom row - Day of week markers */}
+                {dayMarkers.map((marker, idx) => (
+                  <g key={`day-marker-${idx}`}>
+                    {/* Day cell background - highlight weekends */}
+                    {idx < dayMarkers.length - 1 && (
+                      <rect
+                        x={marker.x}
+                        y={35}
+                        width={dayMarkers[idx + 1].x - marker.x}
+                        height={topMargin - 35}
+                        fill={marker.date.getDay() === 0 || marker.date.getDay() === 6 ? '#d0d0d0' : 'transparent'}
+                        opacity={0.3}
+                      />
+                    )}
+                    {/* Day letter */}
+                    <text
+                      x={idx < dayMarkers.length - 1 ? (marker.x + dayMarkers[idx + 1].x) / 2 : marker.x + 20}
+                      y={60}
+                      fontSize={10}
+                      fontWeight="500"
+                      textAnchor="middle"
+                      fill={marker.date.getDay() === 0 || marker.date.getDay() === 6 ? '#666' : '#333'}
+                    >
+                      {marker.day}
+                    </text>
+                    {/* Vertical separator */}
+                    <line
+                      x1={marker.x}
+                      y1={35}
+                      x2={marker.x}
+                      y2={topMargin}
+                      stroke="#ccc"
+                      strokeWidth={1}
+                    />
+                  </g>
+                ))}
+              </>
+            );
+          })()}
 
           {/* Grid lines */}
           {timeMarkers.map((time, idx) => (
@@ -601,77 +736,58 @@ export const TimelineGanttChart = ({
             />
           ))}
 
-          {/* Y-axis labels (Filler names) */}
-          {Array.from({ length: numFillers }, (_, i) => (
-            <g key={`filler-${i}`}>
-              {/* Alternating row background */}
-              <rect
-                x={0}
-                y={topMargin + i * rowHeight}
-                width={width}
-                height={rowHeight}
-                fill={i % 2 === 0 ? '#ffffff' : '#f8f9fa'}
-                opacity={0.5}
-              />
+          {/* Task Groups (Equipment rows) */}
+          {activityGroups.map((group, groupIdx) => {
+            const yPos = taskGroupYPositions[groupIdx];
+            const groupHeight = taskGroupHeights[groupIdx];
 
-              {/* Left panel background */}
-              <rect
-                x={0}
-                y={topMargin + i * rowHeight}
-                width={leftMargin}
-                height={rowHeight}
-                fill={i % 2 === 0 ? '#f8f9fa' : '#ffffff'}
-                stroke="#e0e0e0"
-                strokeWidth={1}
-              />
+            return (
+              <g key={`task-group-${groupIdx}`}>
+                {/* Alternating background for entire task group */}
+                <rect
+                  x={0}
+                  y={yPos}
+                  width={width}
+                  height={groupHeight}
+                  fill={groupIdx % 2 === 0 ? '#ffffff' : '#f8f9fa'}
+                  opacity={0.6}
+                />
 
-              {/* Filler Name Column */}
-              <text
-                x={10}
-                y={topMargin + i * rowHeight + rowHeight / 2}
-                fontSize={14}
-                fontWeight="bold"
-                textAnchor="start"
-                dominantBaseline="middle"
-              >
-                Filler {i + 1}
-              </text>
+                {/* Left panel background for task name */}
+                <rect
+                  x={0}
+                  y={yPos}
+                  width={leftMargin}
+                  height={groupHeight}
+                  fill={groupIdx % 2 === 0 ? '#f0f0f0' : '#ffffff'}
+                  stroke="#d0d0d0"
+                  strokeWidth={1}
+                />
 
-              {/* Utilization indicator (small bar) */}
-              <rect
-                x={leftMargin - 60}
-                y={topMargin + i * rowHeight + rowHeight / 2 - 6}
-                width={50}
-                height={12}
-                fill="#e0e0e0"
-                stroke="#999"
-                strokeWidth={0.5}
-                rx={2}
-              />
-              <rect
-                x={leftMargin - 60}
-                y={topMargin + i * rowHeight + rowHeight / 2 - 6}
-                width={
-                  (50 *
-                    filteredActivities.filter((a) => a.filler_id === i + 1 && a.kind === 'FILL').length) /
-                  Math.max(filteredActivities.filter((a) => a.kind === 'FILL').length / numFillers, 1)
-                }
-                height={12}
-                fill="#4caf50"
-                rx={2}
-              />
+                {/* Task Name */}
+                <text
+                  x={10}
+                  y={yPos + 22}
+                  fontSize={13}
+                  fontWeight="600"
+                  textAnchor="start"
+                  fill="#1a3a52"
+                >
+                  Task {group.fillerId}
+                </text>
 
-              {/* Horizontal row separator */}
-              <line
-                x1={0}
-                y1={topMargin + (i + 1) * rowHeight}
-                x2={width}
-                y2={topMargin + (i + 1) * rowHeight}
-                stroke="#e0e0e0"
-                strokeWidth={1}
-              />
-            </g>
-          ))}
+                {/* Horizontal separator at bottom of task group */}
+                <line
+                  x1={0}
+                  y1={yPos + groupHeight}
+                  x2={width}
+                  y2={yPos + groupHeight}
+                  stroke="#d0d0d0"
+                  strokeWidth={1.5}
+                />
+              </g>
+            );
+          })}
 
           {/* Current time indicator (Today line) */}
           {scheduleStartTime && (() => {
@@ -720,108 +836,146 @@ export const TimelineGanttChart = ({
             return null;
           })()}
 
-          {/* Activity bars */}
-          {filteredActivities.map((activity, idx) => {
-            const y =
-              topMargin +
-              (activity.filler_id - 1) * rowHeight +
-              (rowHeight - barHeight) / 2;
-            const x = timeScale(activity.start_time);
-            const barWidth = Math.max(
-              timeScale(activity.end_time) - x,
-              2 // Minimum width for visibility
-            );
-            const isHighlighted = isActivityHighlighted(activity);
-            const isHovered = hoveredActivity?.id === activity.id;
-            const isSearchMatch = searchQuery && matchesSearch(activity);
+          {/* Activity bars - stacked within task groups */}
+          {activityGroups.map((group, groupIdx) => {
+            const groupYPos = taskGroupYPositions[groupIdx];
 
-            return (
-              <g key={`activity-${idx}`}>
-                {/* Glow effect for search matches */}
-                {isSearchMatch && (
-                  <rect
-                    x={x - 2}
-                    y={y - 2}
-                    width={barWidth + 4}
-                    height={barHeight + 4}
-                    fill="none"
-                    stroke="#FFD700"
-                    strokeWidth={2}
-                    opacity={0.7}
-                    rx={2}
-                  />
-                )}
-                {/* Activity bar with gradient effect */}
-                <defs>
-                  <linearGradient id={`gradient-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: getActivityColor(activity), stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: getActivityColor(activity), stopOpacity: 0.85 }} />
-                  </linearGradient>
-                </defs>
-                <rect
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={barHeight}
-                  fill={`url(#gradient-${idx})`}
-                  stroke={isHighlighted || isHovered ? '#000' : isSearchMatch ? '#FFD700' : '#666'}
-                  strokeWidth={isHighlighted ? 2.5 : isHovered || isSearchMatch ? 2 : 0.5}
-                  opacity={
-                    selectedLot === null
-                      ? isHovered
-                        ? 1.0
-                        : 0.9
-                      : isHighlighted
-                      ? 1.0
-                      : 0.3
-                  }
-                  rx={3}
-                  ry={3}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleActivityClick(activity)}
-                  onMouseEnter={() => setHoveredActivity(activity)}
-                  onMouseLeave={() => setHoveredActivity(null)}
-                >
-                  <title>
-                    {`Lot: ${activity.lot_id}\nType: ${
-                      activity.kind || 'N/A'
-                    }\nStart: ${activity.start_time.toFixed(
-                      1
-                    )}h\nEnd: ${activity.end_time.toFixed(
-                      1
-                    )}h\nDuration: ${activity.duration.toFixed(1)}h${
-                      activity.lot_type
-                        ? `\nLot Type: ${activity.lot_type}`
-                        : ''
-                    }${
-                      activity.num_units
-                        ? `\nUnits: ${activity.num_units}`
-                        : ''
-                    }`}
-                  </title>
-                </rect>
+            // Filter activities for this group based on search and filter
+            const groupActivities = group.activities.filter(a => {
+              const timeVisible = a.end_time >= visibleTimeRange.start && a.start_time <= visibleTimeRange.end;
+              const typeMatch = filterType === 'all' || a.kind === filterType;
+              const searchMatch = !searchQuery || matchesSearch(a);
+              return timeVisible && typeMatch && searchMatch;
+            });
 
-                {/* Activity label (only if wide enough) */}
-                {barWidth > 60 && (
-                  <text
-                    x={x + barWidth / 2}
-                    y={y + barHeight / 2}
-                    fontSize={11}
-                    fontWeight="bold"
-                    fill="white"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    pointerEvents="none"
-                    style={{
-                      textShadow: '0 0 3px rgba(0,0,0,0.5)',
-                    }}
-                  >
-                    {activity.lot_id.length > 10
-                      ? activity.lot_id.substring(0, 10) + '...'
-                      : activity.lot_id}
-                  </text>
-                )}
-              </g>
+            // Sort activities by start time
+            const sortedActivities = [...groupActivities].sort((a, b) => a.start_time - b.start_time);
+
+            // Assign activities to rows to avoid overlap
+            const activityRows: Activity[][] = [];
+            sortedActivities.forEach(activity => {
+              // Find a row where this activity doesn't overlap with any existing activity
+              let placed = false;
+              for (let rowIdx = 0; rowIdx < activityRows.length; rowIdx++) {
+                const row = activityRows[rowIdx];
+                const overlaps = row.some(a =>
+                  a.start_time < activity.end_time && a.end_time > activity.start_time
+                );
+                if (!overlaps) {
+                  row.push(activity);
+                  placed = true;
+                  break;
+                }
+              }
+              // If no suitable row found, create a new row
+              if (!placed) {
+                activityRows.push([activity]);
+              }
+            });
+
+            // Render activities
+            return activityRows.flatMap((row, rowIdx) =>
+              row.map((activity, actIdx) => {
+                const y = groupYPos + taskHeaderHeight + taskPadding + rowIdx * (activityBarHeight + activitySpacing);
+                const x = timeScale(activity.start_time);
+                const barWidth = Math.max(
+                  timeScale(activity.end_time) - x,
+                  3 // Minimum width for visibility
+                );
+                const isHighlighted = isActivityHighlighted(activity);
+                const isHovered = hoveredActivity?.id === activity.id;
+                const isSearchMatch = searchQuery && matchesSearch(activity);
+                const uniqueId = `${groupIdx}-${rowIdx}-${actIdx}`;
+
+                return (
+                  <g key={`activity-${uniqueId}`}>
+                    {/* Glow effect for search matches */}
+                    {isSearchMatch && (
+                      <rect
+                        x={x - 2}
+                        y={y - 2}
+                        width={barWidth + 4}
+                        height={activityBarHeight + 4}
+                        fill="none"
+                        stroke="#FFD700"
+                        strokeWidth={2}
+                        opacity={0.7}
+                        rx={2}
+                      />
+                    )}
+                    {/* Activity bar with gradient effect */}
+                    <defs>
+                      <linearGradient id={`gradient-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: getActivityColor(activity), stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: getActivityColor(activity), stopOpacity: 0.85 }} />
+                      </linearGradient>
+                    </defs>
+                    <rect
+                      x={x}
+                      y={y}
+                      width={barWidth}
+                      height={activityBarHeight}
+                      fill={`url(#gradient-${uniqueId})`}
+                      stroke={isHighlighted || isHovered ? '#000' : isSearchMatch ? '#FFD700' : '#555'}
+                      strokeWidth={isHighlighted ? 2.5 : isHovered || isSearchMatch ? 2 : 0.5}
+                      opacity={
+                        selectedLot === null
+                          ? isHovered
+                            ? 1.0
+                            : 0.95
+                          : isHighlighted
+                          ? 1.0
+                          : 0.3
+                      }
+                      rx={2}
+                      ry={2}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleActivityClick(activity)}
+                      onMouseEnter={() => setHoveredActivity(activity)}
+                      onMouseLeave={() => setHoveredActivity(null)}
+                    >
+                      <title>
+                        {`Lot: ${activity.lot_id}\nType: ${
+                          activity.kind || 'N/A'
+                        }\nStart: ${activity.start_time.toFixed(
+                          1
+                        )}h\nEnd: ${activity.end_time.toFixed(
+                          1
+                        )}h\nDuration: ${activity.duration.toFixed(1)}h${
+                          activity.lot_type
+                            ? `\nLot Type: ${activity.lot_type}`
+                            : ''
+                        }${
+                          activity.num_units
+                            ? `\nUnits: ${activity.num_units}`
+                            : ''
+                        }`}
+                      </title>
+                    </rect>
+
+                    {/* Activity label (only if wide enough) */}
+                    {barWidth > 50 && (
+                      <text
+                        x={x + barWidth / 2}
+                        y={y + activityBarHeight / 2}
+                        fontSize={10}
+                        fontWeight="600"
+                        fill="white"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        pointerEvents="none"
+                        style={{
+                          textShadow: '0 0 3px rgba(0,0,0,0.7)',
+                        }}
+                      >
+                        {activity.lot_id.length > 12
+                          ? activity.lot_id.substring(0, 10) + '...'
+                          : activity.lot_id}
+                      </text>
+                    )}
+                  </g>
+                );
+              })
             );
           })}
 
