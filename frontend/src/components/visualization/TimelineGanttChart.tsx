@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -91,19 +91,13 @@ export const TimelineGanttChart = ({
     });
   };
 
-  const formatDateTimeShort = (date: Date): string => {
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-    });
-  };
+
 
   // Chart dimensions
   const width = 1200;
-  const leftMargin = 100;
+  const leftMargin = 250; // Increased for task details panel
   const rightMargin = 50;
-  const topMargin = 40;
+  const topMargin = 60; // Increased for dual-row timeline header
   const bottomMargin = 60;
   const rowHeight = 50;
   const barHeight = 35;
@@ -286,7 +280,7 @@ export const TimelineGanttChart = ({
     return (
       activity.lot_id.toLowerCase().includes(query) ||
       activity.id.toLowerCase().includes(query) ||
-      (activity.lot_type && activity.lot_type.toLowerCase().includes(query))
+      Boolean(activity.lot_type && activity.lot_type.toLowerCase().includes(query))
     );
   };
 
@@ -482,6 +476,117 @@ export const TimelineGanttChart = ({
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setHoveredActivity(null)}
           >
+          {/* Professional Timeline Header */}
+          {/* Left panel header */}
+          <rect
+            x={0}
+            y={0}
+            width={leftMargin}
+            height={topMargin}
+            fill="#e8eaed"
+            stroke="#ccc"
+            strokeWidth={1}
+          />
+
+          {/* Column headers in left panel */}
+          <text
+            x={10}
+            y={20}
+            fontSize={11}
+            fontWeight="bold"
+            fill="#333"
+          >
+            Task Name
+          </text>
+          <text
+            x={10}
+            y={45}
+            fontSize={10}
+            fill="#666"
+          >
+            (Resource)
+          </text>
+          <text
+            x={leftMargin - 60}
+            y={30}
+            fontSize={10}
+            fontWeight="bold"
+            fill="#333"
+            textAnchor="middle"
+          >
+            Load
+          </text>
+
+          {/* Header background for timeline area */}
+          <rect
+            x={leftMargin}
+            y={0}
+            width={width - leftMargin - rightMargin}
+            height={topMargin}
+            fill="#f0f0f0"
+            stroke="#ccc"
+            strokeWidth={1}
+          />
+
+          {/* Top row - Date groupings */}
+          {scheduleStartTime && timeMarkers.length > 1 && (() => {
+            const dates: { date: string; startX: number; endX: number }[] = [];
+            let currentDate = '';
+            let startX = leftMargin;
+
+            timeMarkers.forEach((time) => {
+              const actualDate = getActualDateTime(time);
+              if (actualDate) {
+                const dateStr = actualDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                });
+                if (dateStr !== currentDate && currentDate !== '') {
+                  dates.push({ date: currentDate, startX, endX: timeScale(time) });
+                  startX = timeScale(time);
+                }
+                currentDate = dateStr;
+              }
+            });
+            // Add last date
+            if (currentDate !== '') {
+              dates.push({ date: currentDate, startX, endX: timeScale(visibleTimeRange.end) });
+            }
+
+            return dates.map((d, idx) => (
+              <g key={`date-group-${idx}`}>
+                <line
+                  x1={d.startX}
+                  y1={0}
+                  x2={d.startX}
+                  y2={topMargin}
+                  stroke="#999"
+                  strokeWidth={1}
+                />
+                <text
+                  x={(d.startX + d.endX) / 2}
+                  y={20}
+                  fontSize={12}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#333"
+                >
+                  {d.date}
+                </text>
+              </g>
+            ));
+          })()}
+
+          {/* Divider line between date and time rows */}
+          <line
+            x1={leftMargin}
+            y1={30}
+            x2={width - rightMargin}
+            y2={30}
+            stroke="#ccc"
+            strokeWidth={1}
+          />
+
           {/* Grid lines */}
           {timeMarkers.map((time, idx) => (
             <line
@@ -499,7 +604,28 @@ export const TimelineGanttChart = ({
           {/* Y-axis labels (Filler names) */}
           {Array.from({ length: numFillers }, (_, i) => (
             <g key={`filler-${i}`}>
-              {/* Filler label */}
+              {/* Alternating row background */}
+              <rect
+                x={0}
+                y={topMargin + i * rowHeight}
+                width={width}
+                height={rowHeight}
+                fill={i % 2 === 0 ? '#ffffff' : '#f8f9fa'}
+                opacity={0.5}
+              />
+
+              {/* Left panel background */}
+              <rect
+                x={0}
+                y={topMargin + i * rowHeight}
+                width={leftMargin}
+                height={rowHeight}
+                fill={i % 2 === 0 ? '#f8f9fa' : '#ffffff'}
+                stroke="#e0e0e0"
+                strokeWidth={1}
+              />
+
+              {/* Filler Name Column */}
               <text
                 x={10}
                 y={topMargin + i * rowHeight + rowHeight / 2}
@@ -511,19 +637,88 @@ export const TimelineGanttChart = ({
                 Filler {i + 1}
               </text>
 
+              {/* Utilization indicator (small bar) */}
+              <rect
+                x={leftMargin - 60}
+                y={topMargin + i * rowHeight + rowHeight / 2 - 6}
+                width={50}
+                height={12}
+                fill="#e0e0e0"
+                stroke="#999"
+                strokeWidth={0.5}
+                rx={2}
+              />
+              <rect
+                x={leftMargin - 60}
+                y={topMargin + i * rowHeight + rowHeight / 2 - 6}
+                width={
+                  (50 *
+                    filteredActivities.filter((a) => a.filler_id === i + 1 && a.kind === 'FILL').length) /
+                  Math.max(filteredActivities.filter((a) => a.kind === 'FILL').length / numFillers, 1)
+                }
+                height={12}
+                fill="#4caf50"
+                rx={2}
+              />
+
               {/* Horizontal row separator */}
-              {i < numFillers - 1 && (
-                <line
-                  x1={leftMargin}
-                  y1={topMargin + (i + 1) * rowHeight}
-                  x2={width - rightMargin}
-                  y2={topMargin + (i + 1) * rowHeight}
-                  stroke="#e0e0e0"
-                  strokeWidth={1}
-                />
-              )}
+              <line
+                x1={0}
+                y1={topMargin + (i + 1) * rowHeight}
+                x2={width}
+                y2={topMargin + (i + 1) * rowHeight}
+                stroke="#e0e0e0"
+                strokeWidth={1}
+              />
             </g>
           ))}
+
+          {/* Current time indicator (Today line) */}
+          {scheduleStartTime && (() => {
+            const now = new Date();
+            const start = new Date(scheduleStartTime);
+            const hoursFromStart = (now.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+            // Only show if current time is within visible range and schedule has started
+            if (hoursFromStart >= visibleTimeRange.start && hoursFromStart <= visibleTimeRange.end && hoursFromStart >= 0) {
+              const x = timeScale(hoursFromStart);
+              return (
+                <g>
+                  {/* Vertical line */}
+                  <line
+                    x1={x}
+                    y1={topMargin}
+                    x2={x}
+                    y2={height - bottomMargin}
+                    stroke="#ff0000"
+                    strokeWidth={2}
+                    strokeDasharray="5,5"
+                    opacity={0.7}
+                  />
+                  {/* Label */}
+                  <rect
+                    x={x - 20}
+                    y={topMargin - 8}
+                    width={40}
+                    height={16}
+                    fill="#ff0000"
+                    rx={3}
+                  />
+                  <text
+                    x={x}
+                    y={topMargin + 2}
+                    fontSize={9}
+                    fontWeight="bold"
+                    fill="white"
+                    textAnchor="middle"
+                  >
+                    NOW
+                  </text>
+                </g>
+              );
+            }
+            return null;
+          })()}
 
           {/* Activity bars */}
           {filteredActivities.map((activity, idx) => {
@@ -556,25 +751,32 @@ export const TimelineGanttChart = ({
                     rx={2}
                   />
                 )}
+                {/* Activity bar with gradient effect */}
+                <defs>
+                  <linearGradient id={`gradient-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: getActivityColor(activity), stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: getActivityColor(activity), stopOpacity: 0.85 }} />
+                  </linearGradient>
+                </defs>
                 <rect
                   x={x}
                   y={y}
                   width={barWidth}
                   height={barHeight}
-                  fill={getActivityColor(activity)}
-                  stroke={isHighlighted || isHovered ? '#000' : isSearchMatch ? '#FFD700' : '#333'}
-                  strokeWidth={isHighlighted ? 3 : isHovered || isSearchMatch ? 2 : 1}
+                  fill={`url(#gradient-${idx})`}
+                  stroke={isHighlighted || isHovered ? '#000' : isSearchMatch ? '#FFD700' : '#666'}
+                  strokeWidth={isHighlighted ? 2.5 : isHovered || isSearchMatch ? 2 : 0.5}
                   opacity={
                     selectedLot === null
                       ? isHovered
-                        ? 0.9
-                        : 0.8
+                        ? 1.0
+                        : 0.9
                       : isHighlighted
                       ? 1.0
                       : 0.3
                   }
-                  rx={4}
-                  ry={4}
+                  rx={3}
+                  ry={3}
                   style={{ cursor: 'pointer' }}
                   onClick={() => handleActivityClick(activity)}
                   onMouseEnter={() => setHoveredActivity(activity)}
@@ -633,29 +835,32 @@ export const TimelineGanttChart = ({
             strokeWidth={2}
           />
 
-          {/* Time markers */}
+          {/* Time markers in header (bottom row) */}
           {timeMarkers.map((time, idx) => {
             const actualDate = getActualDateTime(time);
             return (
               <g key={`marker-${idx}`}>
-                {/* Tick mark */}
+                {/* Tick mark at top */}
                 <line
                   x1={timeScale(time)}
-                  y1={height - bottomMargin}
+                  y1={30}
                   x2={timeScale(time)}
-                  y2={height - bottomMargin + 8}
-                  stroke="#333"
-                  strokeWidth={2}
+                  y2={topMargin}
+                  stroke="#999"
+                  strokeWidth={0.5}
                 />
 
-                {/* Time label */}
+                {/* Time label in header */}
                 <text
                   x={timeScale(time)}
-                  y={height - bottomMargin + 25}
-                  fontSize={11}
+                  y={48}
+                  fontSize={10}
                   textAnchor="middle"
+                  fill="#666"
                 >
-                  {actualDate ? formatDateTimeShort(actualDate) : `${time.toFixed(0)}h`}
+                  {actualDate
+                    ? actualDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
+                    : `${time.toFixed(0)}h`}
                 </text>
               </g>
             );
