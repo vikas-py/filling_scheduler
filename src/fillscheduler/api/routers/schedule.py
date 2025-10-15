@@ -767,7 +767,7 @@ async def export_schedule(
             # Generate PDF
             pdf_bytes = generate_pdf_report(
                 schedule_data=schedule_data,
-                user_name=current_user.username,
+                user_name=current_user.email,
                 include_charts=include_charts,
             )
 
